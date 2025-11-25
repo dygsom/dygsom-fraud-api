@@ -16,14 +16,15 @@ from typing import Dict, Any, List
 import pandas as pd
 from datetime import datetime
 import logging
+import os
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+os.chdir(str(project_root))
 
-from src.core.database import get_prisma_client
+from prisma import Prisma
 from src.ml.features.feature_engineering import FeatureEngineer
-from src.repositories.velocity_repository import VelocityRepository
-from src.core.cache import get_redis_client
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,38 +44,53 @@ async def load_transactions(limit: int = None) -> List[Dict[str, Any]]:
     """
     logger.info(f"Loading transactions (limit={limit})")
     
-    prisma = await get_prisma_client()
+    prisma = Prisma()
+    await prisma.connect()
     
     try:
-        # Query transactions
+        # Query transactions (simple, no includes since schema is flat)
         if limit:
             transactions = await prisma.transaction.find_many(
                 take=limit,
-                order={'created_at': 'desc'},
-                include={
-                    'customer': True,
-                    'payment_method': True,
-                    'merchant': True,
-                    'risk_assessment': True
-                }
+                order={'created_at': 'desc'}
             )
         else:
             transactions = await prisma.transaction.find_many(
-                order={'created_at': 'desc'},
-                include={
-                    'customer': True,
-                    'payment_method': True,
-                    'merchant': True,
-                    'risk_assessment': True
-                }
+                order={'created_at': 'desc'}
             )
         
         logger.info(f"Loaded {len(transactions)} transactions")
         
-        # Convert to dictionaries
+        # Convert to dictionaries with nested structure for feature extraction
         transaction_dicts = []
         for tx in transactions:
-            tx_dict = tx.dict()
+            tx_dict = {
+                'id': tx.id,
+                'transaction_id': tx.transaction_id,
+                'amount': float(tx.amount),
+                'currency': tx.currency,
+                'timestamp': tx.timestamp.isoformat() if tx.timestamp else datetime.utcnow().isoformat(),
+                'customer': {
+                    'customer_id': tx.customer_id or 'unknown',
+                    'email': tx.customer_email or 'unknown@example.com',
+                    'phone': tx.customer_phone or '',
+                    'ip_address': tx.customer_ip or '0.0.0.0'
+                },
+                'payment_method': {
+                    'type': 'credit_card',  # Default
+                    'card': {
+                        'bin': tx.card_bin or '000000',
+                        'last4': tx.card_last4 or '0000',
+                        'brand': tx.card_brand or 'UNKNOWN'
+                    }
+                },
+                'merchant': {
+                    'category': 'unknown'  # Default
+                },
+                'fraud_score': float(tx.fraud_score) if tx.fraud_score else 0.0,
+                'risk_level': tx.risk_level,
+                'decision': tx.decision
+            }
             transaction_dicts.append(tx_dict)
         
         return transaction_dicts
@@ -103,43 +119,40 @@ async def extract_features_for_transactions(
     
     feature_engineer = FeatureEngineer()
     
-    # Initialize velocity repository if needed
-    velocity_repo = None
+    # Note: Velocity features will be skipped for now as they require Redis
+    # They can be calculated separately or added during real-time prediction
     if use_velocity:
-        try:
-            redis_client = get_redis_client()
-            velocity_repo = VelocityRepository(redis_client)
-            logger.info("Velocity repository initialized")
-        except Exception as e:
-            logger.warning(f"Could not initialize velocity repository: {e}")
-            use_velocity = False
+        logger.warning("Velocity features disabled for training data preparation")
+        use_velocity = False
     
     # Extract features for each transaction
     all_features = []
     for i, tx in enumerate(transactions):
         try:
-            # Get velocity features if available
-            velocity_features = {}
-            if use_velocity and velocity_repo:
-                velocity_features = await velocity_repo.get_velocity_features(
-                    customer_id=tx.get('customer_id'),
-                    ip_address=tx.get('ip_address'),
-                    device_id=tx.get('device_id')
-                )
+            # Create velocity features placeholder (zeros)
+            velocity_features = {
+                'customer_tx_count_1h': 0,
+                'customer_tx_count_24h': 0,
+                'customer_tx_count_7d': 0,
+                'customer_amount_1h': 0.0,
+                'customer_amount_24h': 0.0,
+                'customer_amount_7d': 0.0,
+                'ip_tx_count_1h': 0,
+                'ip_tx_count_24h': 0,
+                'device_tx_count_1h': 0,
+                'device_tx_count_24h': 0
+            }
             
             # Extract features
             features = feature_engineer.extract_all_features(tx, velocity_features)
             
             # Add target variable (fraud label)
-            if tx.get('risk_assessment'):
-                fraud_score = tx['risk_assessment'].get('fraud_score', 0.0)
-                # Convert score to binary label (threshold 0.7)
-                features['is_fraud'] = int(fraud_score >= 0.7)
-            else:
-                features['is_fraud'] = 0
+            fraud_score = tx.get('fraud_score', 0.0)
+            # Convert score to binary label (threshold 0.7)
+            features['is_fraud'] = int(fraud_score >= 0.7)
             
             # Add transaction ID for reference
-            features['transaction_id'] = tx.get('id', '')
+            features['transaction_id'] = tx.get('transaction_id', '')
             
             all_features.append(features)
             
