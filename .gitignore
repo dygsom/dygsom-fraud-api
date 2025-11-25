@@ -96,6 +96,9 @@ dist/
 
 # Validations (scripts de testing/validación)
 validations/
+instructions/
+
+Claude.md
 
 # Config local (si existe)
 config/local.py

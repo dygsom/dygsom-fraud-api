@@ -7,6 +7,7 @@ from typing import Dict, Any, Optional
 import logging
 from datetime import datetime
 from src.repositories.transaction_repository import TransactionRepository
+from src.repositories.cache_repository import CacheRepository
 from src.schemas.transaction_schemas import CreateTransactionDto, TransactionResponseDto
 
 logger = logging.getLogger(__name__)
@@ -44,16 +45,20 @@ class FraudService:
     def __init__(
         self,
         transaction_repo: TransactionRepository,
-        # ml_service will be added later when ML component is ready
-        # cache_service will be added later for performance optimization
+        cache_repo: Optional[CacheRepository] = None
     ):
         """Initialize FraudService
         
         Args:
             transaction_repo: Transaction repository instance
+            cache_repo: Cache repository instance (optional, for performance optimization)
         """
         self.transaction_repo = transaction_repo
-        logger.info("FraudService initialized")
+        self.cache_repo = cache_repo
+        logger.info(
+            "FraudService initialized",
+            extra={"cache_enabled": cache_repo is not None}
+        )
     
     async def score_transaction(self, transaction_data: CreateTransactionDto) -> Dict[str, Any]:
         """Score transaction for fraud risk
@@ -202,6 +207,28 @@ class FraudService:
             customer_email = transaction_data.customer.email
             customer_ip = transaction_data.customer.ip_address
             
+            # Try cache first if cache_repo exists
+            if self.cache_repo:
+                cached_features = await self.cache_repo.get_velocity_features(customer_email)
+                if cached_features:
+                    logger.debug(
+                        "Using cached velocity features",
+                        extra={
+                            "transaction_id": transaction_data.transaction_id,
+                            "customer_email": customer_email
+                        }
+                    )
+                    return cached_features
+            
+            # Cache miss or no cache - calculate from DB
+            logger.debug(
+                "Calculating velocity features from DB",
+                extra={
+                    "transaction_id": transaction_data.transaction_id,
+                    "customer_email": customer_email
+                }
+            )
+            
             # Get customer transaction counts
             customer_tx_1h = await self.transaction_repo.get_customer_transaction_count(
                 customer_email,
@@ -239,6 +266,20 @@ class FraudService:
                 "ip_tx_count_1h": ip_tx_1h,
                 "ip_tx_count_24h": ip_tx_24h,
             }
+            
+            # Cache for next request if cache_repo exists
+            if self.cache_repo:
+                await self.cache_repo.set_velocity_features(
+                    customer_email,
+                    velocity_features
+                )
+                logger.debug(
+                    "Velocity features cached",
+                    extra={
+                        "transaction_id": transaction_data.transaction_id,
+                        "customer_email": customer_email
+                    }
+                )
             
             return velocity_features
             
