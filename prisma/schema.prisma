@@ -1,0 +1,138 @@
+generator client {
+  provider                      = "prisma-client-py"
+  interface                     = "asyncio"
+  recursive_type_depth          = -1
+  enable_experimental_decimal   = true
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Transaction {
+  id             String   @id @default(uuid())
+  transaction_id String   @unique
+  amount         Decimal  @db.Decimal(12, 2)
+  currency       String   @default("PEN")
+  timestamp      DateTime @default(now())
+  
+  // Customer
+  customer_id    String?
+  customer_email String?
+  customer_phone String?
+  customer_ip    String?
+  
+  // Payment
+  card_bin       String?
+  card_last4     String?
+  card_brand     String?
+  
+  // Fraud Detection
+  fraud_score    Decimal? @db.Decimal(5, 4)
+  risk_level     String?
+  decision       String?
+  
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+  
+  // Relations
+  fraud_features FraudFeatures?
+  
+  @@index([customer_email])
+  @@index([customer_ip])
+  @@index([fraud_score])
+  @@index([created_at])
+  @@map("transactions")
+}
+
+model FraudFeatures {
+  id                      String   @id @default(uuid())
+  transaction_id          String   @unique
+  
+  // Velocity Features
+  customer_tx_count_1h    Int      @default(0)
+  customer_tx_count_24h   Int      @default(0)
+  customer_tx_amount_1h   Decimal  @db.Decimal(12, 2) @default(0)
+  customer_tx_amount_24h  Decimal  @db.Decimal(12, 2) @default(0)
+  ip_tx_count_1h          Int      @default(0)
+  ip_tx_count_24h         Int      @default(0)
+  
+  // Email Features
+  email_domain            String?
+  email_domain_risk_score Decimal? @db.Decimal(5, 4)
+  email_is_disposable     Boolean  @default(false)
+  
+  // IP Features
+  ip_country              String?
+  ip_city                 String?
+  ip_is_vpn               Boolean  @default(false)
+  ip_is_proxy             Boolean  @default(false)
+  ip_risk_score           Decimal? @db.Decimal(5, 4)
+  
+  // Card Features
+  card_bin_risk_score     Decimal? @db.Decimal(5, 4)
+  card_bin_country        String?
+  card_bin_bank           String?
+  
+  // Time Features
+  transaction_hour        Int?
+  is_unusual_hour         Boolean  @default(false)
+  day_of_week             Int?
+  
+  // Device Features
+  device_fingerprint      String?
+  device_is_new           Boolean  @default(false)
+  
+  created_at              DateTime @default(now())
+  
+  // Relations
+  transaction             Transaction @relation(fields: [transaction_id], references: [transaction_id], onDelete: Cascade)
+  
+  @@index([email_domain])
+  @@index([ip_country])
+  @@index([card_bin_country])
+  @@map("fraud_features")
+}
+
+model Blocklist {
+  id           String   @id @default(uuid())
+  type         String   // "email", "ip", "card_bin"
+  value        String
+  reason       String?
+  blocked_by   String?  // User ID or system that added the block
+  is_active    Boolean  @default(true)
+  expires_at   DateTime?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  
+  @@unique([type, value])
+  @@index([type, value])
+  @@index([is_active])
+  @@map("blocklists")
+}
+
+model ApiKey {
+  id           String   @id @default(uuid())
+  key_hash     String   @unique
+  name         String
+  description  String?
+  
+  // Permissions
+  is_active    Boolean  @default(true)
+  rate_limit   Int      @default(100) // requests per minute
+  
+  // Usage tracking
+  last_used_at DateTime?
+  request_count Int     @default(0)
+  
+  // Metadata
+  created_by   String?
+  expires_at   DateTime?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  
+  @@index([key_hash])
+  @@index([is_active])
+  @@map("api_keys")
+}
