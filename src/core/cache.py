@@ -7,12 +7,9 @@ from typing import Optional, Any, Dict
 import json
 import logging
 from redis import Redis
+from src.core.config import settings
 
 logger = logging.getLogger(__name__)
-
-# Constantes
-DEFAULT_L1_MAX_SIZE = 1000  # Max items in L1 cache
-DEFAULT_TTL_SECONDS = 60  # Default TTL for cache entries
 
 
 class CacheService:
@@ -30,22 +27,22 @@ class CacheService:
     """
     
     def __init__(
-        self, 
-        redis_client: Redis, 
-        default_ttl: int = DEFAULT_TTL_SECONDS,
-        l1_max_size: int = DEFAULT_L1_MAX_SIZE
+        self,
+        redis_client: Redis,
+        default_ttl: int = None,
+        l1_max_size: int = None
     ):
         """Initialize cache service with L1 and L2
-        
+
         Args:
             redis_client: Redis connection instance
-            default_ttl: Default time-to-live in seconds
-            l1_max_size: Maximum size of L1 cache
+            default_ttl: Default time-to-live in seconds (uses settings if None)
+            l1_max_size: Maximum size of L1 cache (uses settings if None)
         """
         self.redis_client = redis_client
         self.l1_cache: Dict[str, Any] = {}
-        self.default_ttl = default_ttl
-        self.l1_max_size = l1_max_size
+        self.default_ttl = default_ttl if default_ttl is not None else settings.CACHE_DEFAULT_TTL
+        self.l1_max_size = l1_max_size if l1_max_size is not None else settings.CACHE_L1_MAX_SIZE
         
         logger.info(
             "CacheService initialized",

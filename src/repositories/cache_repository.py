@@ -8,13 +8,9 @@ from datetime import datetime
 import hashlib
 import logging
 from src.core.cache import CacheService
+from src.core.config import settings
 
 logger = logging.getLogger(__name__)
-
-# Constantes TTL específicas
-VELOCITY_FEATURES_TTL = 60      # 1 minute
-IP_HISTORY_TTL = 300            # 5 minutes  
-CUSTOMER_HISTORY_TTL = 60       # 1 minute
 
 
 class CacheRepository:
@@ -109,7 +105,7 @@ class CacheRepository:
             result = await self.cache_service.set(
                 key=cache_key,
                 value=features,
-                ttl=VELOCITY_FEATURES_TTL
+                ttl=settings.CACHE_VELOCITY_TTL
             )
             
             if result:
@@ -198,7 +194,7 @@ class CacheRepository:
             result = await self.cache_service.set(
                 key=cache_key,
                 value=history,
-                ttl=IP_HISTORY_TTL
+                ttl=settings.CACHE_IP_HISTORY_TTL
             )
             
             if result:
@@ -287,7 +283,7 @@ class CacheRepository:
             result = await self.cache_service.set(
                 key=cache_key,
                 value=history,
-                ttl=CUSTOMER_HISTORY_TTL
+                ttl=settings.CACHE_CUSTOMER_HISTORY_TTL
             )
             
             if result:

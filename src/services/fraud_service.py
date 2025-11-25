@@ -13,10 +13,8 @@ from src.schemas.transaction_schemas import CreateTransactionDto, TransactionRes
 logger = logging.getLogger(__name__)
 
 
-# Business rules constants
-FRAUD_SCORE_LOW_THRESHOLD = 0.3
-FRAUD_SCORE_MEDIUM_THRESHOLD = 0.5
-FRAUD_SCORE_HIGH_THRESHOLD = 0.8
+# Import centralized configuration
+from src.core.config import settings
 
 # Risk levels
 RISK_LEVEL_LOW = "LOW"
@@ -28,11 +26,6 @@ RISK_LEVEL_CRITICAL = "CRITICAL"
 RECOMMENDATION_APPROVE = "APPROVE"
 RECOMMENDATION_REVIEW = "REVIEW"
 RECOMMENDATION_DECLINE = "DECLINE"
-
-# Velocity check limits
-MAX_TRANSACTIONS_PER_HOUR = 5
-MAX_TRANSACTIONS_PER_DAY = 20
-MAX_AMOUNT_PER_DAY = 10000.00
 
 
 class FraudService:
@@ -316,19 +309,19 @@ class FraudService:
         score = 0.0
         
         # High transaction count in last hour (max 20 points)
-        if velocity_features["customer_tx_count_1h"] > MAX_TRANSACTIONS_PER_HOUR:
+        if velocity_features["customer_tx_count_1h"] > settings.FRAUD_MAX_TX_PER_HOUR:
             score += 0.20
         elif velocity_features["customer_tx_count_1h"] > 3:
             score += 0.10
-        
+
         # High transaction count in last 24h (max 20 points)
-        if velocity_features["customer_tx_count_24h"] > MAX_TRANSACTIONS_PER_DAY:
+        if velocity_features["customer_tx_count_24h"] > settings.FRAUD_MAX_TX_PER_DAY:
             score += 0.20
         elif velocity_features["customer_tx_count_24h"] > 10:
             score += 0.10
-        
+
         # High amount in last 24h (max 20 points)
-        if velocity_features["customer_amount_24h"] > MAX_AMOUNT_PER_DAY:
+        if velocity_features["customer_amount_24h"] > settings.FRAUD_MAX_AMOUNT_PER_DAY:
             score += 0.20
         elif velocity_features["customer_amount_24h"] > 5000:
             score += 0.10
@@ -366,11 +359,11 @@ class FraudService:
         Returns:
             Risk level string
         """
-        if fraud_score < FRAUD_SCORE_LOW_THRESHOLD:
+        if fraud_score < settings.FRAUD_SCORE_LOW_THRESHOLD:
             return RISK_LEVEL_LOW
-        elif fraud_score < FRAUD_SCORE_MEDIUM_THRESHOLD:
+        elif fraud_score < settings.FRAUD_SCORE_MEDIUM_THRESHOLD:
             return RISK_LEVEL_MEDIUM
-        elif fraud_score < FRAUD_SCORE_HIGH_THRESHOLD:
+        elif fraud_score < settings.FRAUD_SCORE_HIGH_THRESHOLD:
             return RISK_LEVEL_HIGH
         else:
             return RISK_LEVEL_CRITICAL
