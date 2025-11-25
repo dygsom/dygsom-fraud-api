@@ -1,17 +1,18 @@
 """
 Machine Learning Service for fraud prediction.
 
-Day 3 implementation uses rule-based scoring (placeholder).
-Day 6 will integrate actual XGBoost model trained by Alicia.
+Day 6 implementation with XGBoost model integration.
+Uses ModelManager for predictions with fallback to rule-based scoring.
 """
 
 from typing import Dict, Any
 import logging
+from .model_manager import ModelManager
 
 logger = logging.getLogger(__name__)
 
 # Model configuration constants
-MODEL_VERSION_BASELINE = "v1.0.0-baseline"
+MODEL_VERSION_XGBOOST = "v2.0.0-xgboost"
 LOW_RISK_THRESHOLD = 0.3
 MEDIUM_RISK_THRESHOLD = 0.5
 HIGH_RISK_THRESHOLD = 0.8
@@ -20,43 +21,49 @@ HIGH_RISK_THRESHOLD = 0.8
 class MLService:
     """Machine Learning service for fraud prediction
 
-    Currently implements rule-based scoring as placeholder until
-    actual ML model is trained and integrated.
+    Day 6 Implementation: Uses trained XGBoost model via ModelManager.
+    Falls back to rule-based scoring if model is unavailable.
 
     Attributes:
         model_version: Version identifier for the model
+        model_manager: ModelManager instance for predictions
     """
 
     def __init__(self):
-        """Initialize MLService with baseline configuration
+        """Initialize MLService with XGBoost model
 
-        In Day 6, this will load actual trained model from S3 or local storage.
+        Loads trained model via ModelManager. Falls back gracefully if unavailable.
         """
-        self.model_version = MODEL_VERSION_BASELINE
-        logger.info(f"MLService initialized with version: {self.model_version}")
+        self.model_version = MODEL_VERSION_XGBOOST
+        self.model_manager = ModelManager()
+        
+        # Try to load model on initialization
+        model_loaded = self.model_manager.load_model()
+        
+        if model_loaded:
+            logger.info(f"MLService initialized with XGBoost model version: {self.model_version}")
+        else:
+            logger.warning("MLService initialized without model - will use fallback predictions")
+            self.model_version = "v1.0.0-fallback"
 
     def predict(self, features: Dict[str, Any]) -> Dict[str, Any]:
         """Predict fraud probability for transaction
 
-        Day 3 Implementation: Uses simple rule-based scoring.
-        Day 6 Implementation: Will use trained XGBoost model.
+        Day 6 Implementation: Uses trained XGBoost model via ModelManager.
 
         Args:
-            features: Dict containing transaction features for prediction
-                Expected keys:
-                - amount: Transaction amount
-                - transactions_last_hour: Count of recent transactions
-                - transactions_last_day: Count of daily transactions
-                - amount_last_day: Total amount in last 24h
-                - customer_email: Customer email
-                - customer_ip: Customer IP address
+            features: Dict containing extracted features (70+)
+                Features should be extracted by FeatureEngineer before calling this.
 
         Returns:
             Dict with prediction results:
-                - fraud_score: Float between 0 and 1
+                - fraud_score: Float between 0 and 100
+                - fraud_probability: Float between 0 and 1
                 - risk_level: LOW, MEDIUM, HIGH, or CRITICAL
                 - recommendation: APPROVE, REVIEW, or DECLINE
                 - model_version: Version of the model used
+                - model_used: Whether ML model was used (vs fallback)
+                - confidence: Prediction confidence level
 
         Raises:
             ValueError: If required features are missing
@@ -65,29 +72,38 @@ class MLService:
         try:
             logger.debug(
                 "Running ML prediction",
-                extra={"features": features, "model_version": self.model_version},
+                extra={"feature_count": len(features), "model_version": self.model_version},
             )
 
-            # Calculate fraud score using rule-based approach
-            fraud_score = self._calculate_rule_based_score(features)
-
+            # Use ModelManager for prediction
+            prediction_result = self.model_manager.predict(features)
+            
+            # Extract results
+            fraud_score = prediction_result['fraud_score']  # Already 0-100
+            fraud_probability = prediction_result['fraud_probability']  # 0-1
+            
             # Determine risk level and recommendation
-            risk_level = self._get_risk_level(fraud_score)
+            risk_level = self._get_risk_level(fraud_probability)
             recommendation = self._get_recommendation(risk_level)
 
             result = {
                 "fraud_score": fraud_score,
+                "fraud_probability": fraud_probability,
                 "risk_level": risk_level,
                 "recommendation": recommendation,
                 "model_version": self.model_version,
+                "model_used": prediction_result.get('model_used', False),
+                "confidence": prediction_result.get('confidence', 'UNKNOWN')
             }
 
-            logger.debug(
+            logger.info(
                 "ML prediction completed",
                 extra={
                     "fraud_score": fraud_score,
                     "risk_level": risk_level,
                     "recommendation": recommendation,
+                    "model_used": result['model_used'],
+                    "confidence": result['confidence']
                 },
             )
 
@@ -104,71 +120,20 @@ class MLService:
             )
             raise
 
-    def _calculate_rule_based_score(self, features: Dict[str, Any]) -> float:
-        """Calculate fraud score using rule-based approach
-
-        This is a placeholder implementation for Day 3.
-        Day 6 will replace this with actual ML model prediction.
-
-        Rules:
-        - High velocity transactions increase score
-        - Large amounts increase score
-        - Multiple transactions from same IP increase score
+    def _get_risk_level(self, fraud_probability: float) -> str:
+        """Determine risk level from fraud probability
 
         Args:
-            features: Transaction features dict
-
-        Returns:
-            Fraud score between 0.0 and 1.0
-        """
-        score = 0.0
-
-        # Rule 1: Amount-based scoring (0-0.3 points)
-        amount = features.get("amount", 0)
-        if amount > 10000:
-            score += 0.3
-        elif amount > 5000:
-            score += 0.2
-        elif amount > 1000:
-            score += 0.1
-
-        # Rule 2: Velocity-based scoring (0-0.4 points)
-        transactions_last_hour = features.get("transactions_last_hour", 0)
-        if transactions_last_hour > 10:
-            score += 0.4
-        elif transactions_last_hour > 5:
-            score += 0.3
-        elif transactions_last_hour > 3:
-            score += 0.2
-
-        # Rule 3: Daily transaction amount (0-0.3 points)
-        amount_last_day = features.get("amount_last_day", 0)
-        if amount_last_day > 50000:
-            score += 0.3
-        elif amount_last_day > 20000:
-            score += 0.2
-        elif amount_last_day > 10000:
-            score += 0.1
-
-        # Ensure score is between 0 and 1
-        score = min(1.0, max(0.0, score))
-
-        return round(score, 4)
-
-    def _get_risk_level(self, fraud_score: float) -> str:
-        """Determine risk level from fraud score
-
-        Args:
-            fraud_score: Fraud probability (0-1)
+            fraud_probability: Fraud probability (0-1)
 
         Returns:
             Risk level: LOW, MEDIUM, HIGH, or CRITICAL
         """
-        if fraud_score < LOW_RISK_THRESHOLD:
+        if fraud_probability < LOW_RISK_THRESHOLD:
             return "LOW"
-        elif fraud_score < MEDIUM_RISK_THRESHOLD:
+        elif fraud_probability < MEDIUM_RISK_THRESHOLD:
             return "MEDIUM"
-        elif fraud_score < HIGH_RISK_THRESHOLD:
+        elif fraud_probability < HIGH_RISK_THRESHOLD:
             return "HIGH"
         else:
             return "CRITICAL"
@@ -188,3 +153,11 @@ class MLService:
             return "REVIEW"
         else:  # HIGH or CRITICAL
             return "DECLINE"
+    
+    def get_model_info(self) -> Dict[str, Any]:
+        """Get information about loaded model
+        
+        Returns:
+            Dictionary with model information
+        """
+        return self.model_manager.get_model_info()

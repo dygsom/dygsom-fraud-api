@@ -1,6 +1,7 @@
 """
 Fraud Service - Business logic for fraud detection.
-Implements fraud scoring with velocity checks and risk level calculation.
+Implements fraud scoring with ML model and velocity checks.
+Day 6: Integrated with XGBoost via FeatureEngineer and MLService.
 """
 
 from typing import Dict, Any, Optional
@@ -9,6 +10,8 @@ from datetime import datetime
 from src.repositories.transaction_repository import TransactionRepository
 from src.repositories.cache_repository import CacheRepository
 from src.schemas.transaction_schemas import CreateTransactionDto, TransactionResponseDto
+from src.ml.features.feature_engineering import FeatureEngineer
+from src.ml.ml_service import MLService
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +34,8 @@ RECOMMENDATION_DECLINE = "DECLINE"
 class FraudService:
     """Service for fraud detection operations
     
-    Handles fraud scoring, risk level calculation, and transaction recommendations.
-    Implements velocity checks and business rules for fraud detection.
+    Handles fraud scoring using XGBoost ML model with FeatureEngineer.
+    Day 6: Integrated with 70+ features and ModelManager.
     """
     
     def __init__(
@@ -48,9 +51,18 @@ class FraudService:
         """
         self.transaction_repo = transaction_repo
         self.cache_repo = cache_repo
+        
+        # Initialize ML components (Day 6)
+        self.feature_engineer = FeatureEngineer()
+        self.ml_service = MLService()
+        
         logger.info(
-            "FraudService initialized",
-            extra={"cache_enabled": cache_repo is not None}
+            "FraudService initialized with ML integration",
+            extra={
+                "cache_enabled": cache_repo is not None,
+                "feature_count": self.feature_engineer.get_feature_count(),
+                "ml_service_version": self.ml_service.model_version
+            }
         )
     
     async def score_transaction(self, transaction_data: CreateTransactionDto) -> Dict[str, Any]:
@@ -291,10 +303,9 @@ class FraudService:
         transaction_data: CreateTransactionDto,
         velocity_features: Dict[str, Any]
     ) -> float:
-        """Calculate fraud score for transaction
+        """Calculate fraud score using ML model
         
-        TODO: Replace with actual ML model prediction.
-        Currently uses rule-based scoring based on velocity checks.
+        Day 6: Uses FeatureEngineer to extract 70+ features and MLService for prediction.
         
         Args:
             transaction_data: Transaction data
@@ -303,21 +314,71 @@ class FraudService:
         Returns:
             Fraud score between 0.0 and 1.0
         """
-        # Placeholder fraud score calculation (rule-based)
-        # This will be replaced with ML model prediction
-        
-        score = 0.0
-        
-        # High transaction count in last hour (max 20 points)
-        if velocity_features["customer_tx_count_1h"] > settings.FRAUD_MAX_TX_PER_HOUR:
-            score += 0.20
-        elif velocity_features["customer_tx_count_1h"] > 3:
-            score += 0.10
-
-        # High transaction count in last 24h (max 20 points)
-        if velocity_features["customer_tx_count_24h"] > settings.FRAUD_MAX_TX_PER_DAY:
-            score += 0.20
-        elif velocity_features["customer_tx_count_24h"] > 10:
+        try:
+            # Convert DTO to dictionary for feature extraction
+            transaction_dict = {
+                'transaction_id': transaction_data.transaction_id,
+                'amount': transaction_data.amount,
+                'currency': transaction_data.currency,
+                'timestamp': transaction_data.timestamp.isoformat() if transaction_data.timestamp else datetime.utcnow().isoformat(),
+                'customer': {
+                    'email': transaction_data.customer.email,
+                    'customer_id': transaction_data.customer.customer_id
+                },
+                'payment_method': {
+                    'type': transaction_data.payment_method.type
+                },
+                'merchant': {
+                    'category': transaction_data.merchant.category if transaction_data.merchant else 'unknown'
+                },
+                'ip_address': transaction_data.customer.ip_address,
+                'device_id': getattr(transaction_data.customer, 'device_id', None)
+            }
+            
+            # Extract all features using FeatureEngineer
+            all_features = self.feature_engineer.extract_all_features(
+                transaction_dict,
+                velocity_features
+            )
+            
+            logger.debug(
+                "Features extracted for ML prediction",
+                extra={
+                    "transaction_id": transaction_data.transaction_id,
+                    "feature_count": len(all_features)
+                }
+            )
+            
+            # Use MLService for prediction
+            ml_result = self.ml_service.predict(all_features)
+            
+            # Extract fraud_probability (0-1)
+            fraud_score = ml_result.get('fraud_probability', 0.0)
+            
+            logger.info(
+                "ML prediction completed",
+                extra={
+                    "transaction_id": transaction_data.transaction_id,
+                    "fraud_score": fraud_score,
+                    "fraud_score_100": ml_result.get('fraud_score'),
+                    "model_used": ml_result.get('model_used'),
+                    "confidence": ml_result.get('confidence')
+                }
+            )
+            
+            return fraud_score
+            
+        except Exception as e:
+            logger.error(
+                "Error in ML fraud scoring, falling back to 0.0",
+                extra={
+                    "transaction_id": transaction_data.transaction_id,
+                    "error": str(e)
+                },
+                exc_info=True
+            )
+            # Return low score on error
+            return 0.0
             score += 0.10
 
         # High amount in last 24h (max 20 points)
