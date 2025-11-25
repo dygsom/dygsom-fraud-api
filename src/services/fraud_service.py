@@ -379,31 +379,6 @@ class FraudService:
             )
             # Return low score on error
             return 0.0
-            score += 0.10
-
-        # High amount in last 24h (max 20 points)
-        if velocity_features["customer_amount_24h"] > settings.FRAUD_MAX_AMOUNT_PER_DAY:
-            score += 0.20
-        elif velocity_features["customer_amount_24h"] > 5000:
-            score += 0.10
-        
-        # High IP transaction count (max 20 points)
-        if velocity_features["ip_tx_count_1h"] > 10:
-            score += 0.20
-        elif velocity_features["ip_tx_count_1h"] > 5:
-            score += 0.10
-        
-        # Large transaction amount (max 20 points)
-        if transaction_data.amount > 5000:
-            score += 0.20
-        elif transaction_data.amount > 2000:
-            score += 0.10
-        
-        # Cap at 1.0
-        score = min(score, 1.0)
-        
-        # Round to 4 decimal places
-        return round(score, 4)
     
     def _calculate_risk_level(self, fraud_score: float) -> str:
         """Calculate risk level based on fraud score

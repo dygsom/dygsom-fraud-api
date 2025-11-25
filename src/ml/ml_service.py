@@ -8,14 +8,12 @@ Uses ModelManager for predictions with fallback to rule-based scoring.
 from typing import Dict, Any
 import logging
 from .model_manager import ModelManager
+from src.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 # Model configuration constants
 MODEL_VERSION_XGBOOST = "v2.0.0-xgboost"
-LOW_RISK_THRESHOLD = 0.3
-MEDIUM_RISK_THRESHOLD = 0.5
-HIGH_RISK_THRESHOLD = 0.8
 
 
 class MLService:
@@ -129,11 +127,11 @@ class MLService:
         Returns:
             Risk level: LOW, MEDIUM, HIGH, or CRITICAL
         """
-        if fraud_probability < LOW_RISK_THRESHOLD:
+        if fraud_probability < settings.FRAUD_SCORE_LOW_THRESHOLD:
             return "LOW"
-        elif fraud_probability < MEDIUM_RISK_THRESHOLD:
+        elif fraud_probability < settings.FRAUD_SCORE_MEDIUM_THRESHOLD:
             return "MEDIUM"
-        elif fraud_probability < HIGH_RISK_THRESHOLD:
+        elif fraud_probability < settings.FRAUD_SCORE_HIGH_THRESHOLD:
             return "HIGH"
         else:
             return "CRITICAL"

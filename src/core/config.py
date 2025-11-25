@@ -61,8 +61,8 @@ class Settings(BaseSettings):
     FRAUD_SCORE_HIGH_THRESHOLD: float = 0.8
 
     # ML Model
-    ML_MODEL_VERSION: str = "v1.0.0-baseline"
-    ML_MODEL_PATH: Optional[str] = None
+    ML_MODEL_VERSION: str = "v2.0.0-xgboost"
+    ML_MODEL_PATH: str = "ml/models/fraud_model.joblib"
 
     # Monitoring & Logging
     SENTRY_DSN: Optional[str] = None

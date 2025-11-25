@@ -12,6 +12,7 @@ import joblib
 import xgboost as xgb
 import numpy as np
 from datetime import datetime
+from src.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +30,11 @@ class ModelManager:
     
     def __init__(self, model_path: Optional[str] = None):
         """Initialize model manager
-        
+
         Args:
-            model_path: Path to trained model file. If None, uses default path.
+            model_path: Path to trained model file. If None, uses settings.ML_MODEL_PATH.
         """
-        self.model_path = model_path or "ml/models/fraud_model.joblib"
+        self.model_path = model_path or settings.ML_MODEL_PATH
         self.model: Optional[xgb.XGBClassifier] = None
         self.model_loaded = False
         self.model_metadata: Dict[str, Any] = {}
