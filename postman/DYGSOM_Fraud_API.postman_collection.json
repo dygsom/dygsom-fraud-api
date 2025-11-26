@@ -1,0 +1,289 @@
+{
+  "info": {
+    "name": "DYGSOM Fraud API",
+    "description": "Collection for DYGSOM Fraud Detection API v1.0.0\n\nAuthentication: API Key in X-API-Key header\nBase URL: https://api.dygsom.com",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "1"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "value",
+        "value": "{{api_key}}",
+        "type": "string"
+      },
+      {
+        "key": "key",
+        "value": "X-API-Key",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://api.dygsom.com",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "dygsom_your_api_key_here",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Checks",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has status field\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData.status).to.equal('healthy');",
+                  "});",
+                  "",
+                  "pm.test(\"Response has timestamp\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('timestamp');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Basic health check to verify API availability. Does not require authentication."
+          },
+          "response": []
+        },
+        {
+          "name": "Readiness Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has status field\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "    pm.expect(jsonData.status).to.equal('ready');",
+                  "});",
+                  "",
+                  "pm.test(\"All checks are ok\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.checks.database).to.equal('ok');",
+                  "    pm.expect(jsonData.checks.cache).to.equal('ok');",
+                  "    pm.expect(jsonData.checks.ml_model).to.equal('ok');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/ready",
+              "host": ["{{base_url}}"],
+              "path": ["health", "ready"]
+            },
+            "description": "Comprehensive readiness check that validates all dependencies (database, cache, ML model). Does not require authentication."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Fraud Detection",
+      "item": [
+        {
+          "name": "Check Fraud - Low Risk",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has fraud_score\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('fraud_score');",
+                  "    pm.expect(jsonData.fraud_score).to.be.a('number');",
+                  "    pm.expect(jsonData.fraud_score).to.be.at.least(0);",
+                  "    pm.expect(jsonData.fraud_score).to.be.at.most(1);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has risk_level\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('risk_level');",
+                  "    pm.expect(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).to.include(jsonData.risk_level);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has recommendation\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('recommendation');",
+                  "    pm.expect(['APPROVE', 'REVIEW', 'REJECT']).to.include(jsonData.recommendation);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has factors\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('factors');",
+                  "    pm.expect(jsonData.factors).to.have.property('velocity_score');",
+                  "    pm.expect(jsonData.factors).to.have.property('amount_risk');",
+                  "    pm.expect(jsonData.factors).to.have.property('location_risk');",
+                  "    pm.expect(jsonData.factors).to.have.property('device_risk');",
+                  "});",
+                  "",
+                  "pm.test(\"Response time is less than 200ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-{{$timestamp}}-LOW\",\n  \"customer_email\": \"john.doe@example.com\",\n  \"customer_ip\": \"203.0.113.45\",\n  \"amount\": 49.99,\n  \"currency\": \"USD\",\n  \"merchant_id\": \"merchant-001\",\n  \"card_bin\": \"424242\",\n  \"device_id\": \"device-xyz789\",\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/fraud/score",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "fraud", "score"]
+            },
+            "description": "Check a low-risk transaction for fraud. Expected to return LOW risk level with APPROVE recommendation."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Fraud - High Amount",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has fraud_score\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('fraud_score');",
+                  "});",
+                  "",
+                  "pm.test(\"Response has risk_level\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('risk_level');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-{{$timestamp}}-HIGH\",\n  \"customer_email\": \"suspicious@temp.com\",\n  \"customer_ip\": \"198.51.100.42\",\n  \"amount\": 5000.00,\n  \"currency\": \"USD\",\n  \"merchant_id\": \"merchant-099\",\n  \"card_bin\": \"400000\",\n  \"device_id\": \"device-suspicious\",\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/fraud/score",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "fraud", "score"]
+            },
+            "description": "Check a high-amount potentially risky transaction. Expected to return MEDIUM or HIGH risk level."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Fraud - Invalid Email (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 422\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has error object\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('error');",
+                  "    pm.expect(jsonData.error).to.have.property('code');",
+                  "    pm.expect(jsonData.error.code).to.equal('validation_error');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transaction_id\": \"tx-{{$timestamp}}-ERR\",\n  \"customer_email\": \"invalid-email\",\n  \"customer_ip\": \"203.0.113.45\",\n  \"amount\": 99.99,\n  \"currency\": \"USD\",\n  \"merchant_id\": \"merchant-001\",\n  \"card_bin\": \"424242\",\n  \"device_id\": \"device-test\",\n  \"timestamp\": \"{{$isoTimestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/fraud/score",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "fraud", "score"]
+            },
+            "description": "Test validation error handling with invalid email format. Expected to return 422 validation error."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -6,12 +6,14 @@ COPY requirements.txt .
 FROM base AS development
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
+RUN prisma generate
 EXPOSE 3000
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "3000", "--reload"]
 
 FROM base AS production
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
+RUN prisma generate
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 EXPOSE 3000

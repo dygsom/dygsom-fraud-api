@@ -19,7 +19,8 @@ EXCLUDED_PATHS = [
     "/health",
     "/docs",
     "/openapi.json",
-    "/redoc"
+    "/redoc",
+    "/metrics"
 ]
 
 

@@ -6,8 +6,10 @@ Implements LRU cache for L1 and Redis for L2 with automatic fallback.
 from typing import Optional, Any, Dict
 import json
 import logging
+import time
 from redis import Redis
 from src.core.config import settings
+from src.core.metrics import track_cache
 
 logger = logging.getLogger(__name__)
 
@@ -55,48 +57,62 @@ class CacheService:
     async def get(self, key: str) -> Optional[Any]:
         """
         Get value from cache (L1 → L2 → None).
-        
+
         Try L1 first (fastest), then L2 (Redis), return None if miss.
         Log cache hits/misses with extra dict.
-        
+
         Args:
             key: Cache key
-            
+
         Returns:
             Cached value if found, None otherwise
         """
+        start_time = time.time()
+
         try:
             # Try L1 cache first (fastest)
             if key in self.l1_cache:
+                duration = time.time() - start_time
+                track_cache("L1", "memory", hit=True, duration=duration)
+
                 logger.debug(
                     "Cache hit",
-                    extra={"key": key, "layer": "L1"}
+                    extra={"key": key, "layer": "L1", "duration_ms": duration * 1000}
                 )
                 return self.l1_cache[key]
-            
+
             # Try L2 (Redis) if L1 miss
             redis_value = self.redis_client.get(key)
             if redis_value is not None:
                 # Deserialize from Redis
                 value = self._deserialize(redis_value)
-                
+
                 # Populate L1 cache for next request
                 self._set_l1(key, value)
-                
+
+                duration = time.time() - start_time
+                track_cache("L2", "redis", hit=True, duration=duration)
+
                 logger.debug(
                     "Cache hit",
-                    extra={"key": key, "layer": "L2"}
+                    extra={"key": key, "layer": "L2", "duration_ms": duration * 1000}
                 )
                 return value
-            
+
             # Cache miss in both layers
+            duration = time.time() - start_time
+            track_cache("L2", "redis", hit=False, duration=duration)
+
             logger.debug(
                 "Cache miss",
-                extra={"key": key}
+                extra={"key": key, "duration_ms": duration * 1000}
             )
             return None
-            
+
         except Exception as e:
+            duration = time.time() - start_time
+            track_cache("L2", "redis", hit=False, duration=duration)
+
             logger.error(
                 "Error getting from cache",
                 extra={"key": key, "error": str(e)},

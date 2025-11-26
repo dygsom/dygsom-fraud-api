@@ -6,12 +6,15 @@ import time
 import logging
 
 from src.api.v1.router import api_router
+from src.api.v1.endpoints.metrics import router as metrics_router
 from src.middleware import (
     SecurityHeadersMiddleware,
     RateLimitMiddleware,
     AuthMiddleware
 )
+from src.middleware.metrics_middleware import MetricsMiddleware
 from src.core.config import settings
+from src.core.metrics import set_model_info
 from src.dependencies import get_prisma, get_redis_client
 
 logger = logging.getLogger(__name__)
@@ -33,6 +36,9 @@ app.add_middleware(
     allow_headers=["Content-Type", "X-API-Key", "Authorization"],
 )
 
+# Metrics middleware - FIRST to track all requests (Day 7)
+app.add_middleware(MetricsMiddleware)
+
 # Security middlewares (order matters: SecurityHeaders -> RateLimit -> Auth)
 # SecurityHeadersMiddleware adds security headers to all responses
 app.add_middleware(SecurityHeadersMiddleware)
@@ -42,6 +48,41 @@ app.add_middleware(RateLimitMiddleware)
 
 # AuthMiddleware validates API keys on all requests
 app.add_middleware(AuthMiddleware)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Initialize application on startup.
+    Day 7: Set ML model info for Prometheus metrics.
+    """
+    logger.info("Application starting up")
+
+    # Initialize ML model info metric (Day 7)
+    try:
+        from src.ml.model_manager import ModelManager
+
+        # Instantiate and load model
+        manager = ModelManager()
+        manager.load_model()
+
+        # Get model info
+        model_info = manager.get_model_info()
+        model_version = settings.ML_MODEL_VERSION
+        model_type = "xgboost"
+
+        set_model_info(model_version, model_type)
+
+        logger.info(
+            "ML model info initialized",
+            extra={
+                "model_version": model_version,
+                "model_type": model_type,
+                "model_loaded": model_info.get('model_loaded', False)
+            }
+        )
+    except Exception as e:
+        logger.warning(f"Could not initialize ML model info: {e}", exc_info=True)
 
 
 @app.get("/health")
@@ -143,5 +184,6 @@ async def root():
     }
 
 
-# Include API router
+# Include API routers
 app.include_router(api_router, prefix="/api/v1")
+app.include_router(metrics_router)  # Prometheus metrics at /metrics (Day 7)

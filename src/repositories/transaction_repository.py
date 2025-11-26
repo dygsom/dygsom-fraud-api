@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from prisma import Prisma
 from src.repositories.base_repository import BaseRepository
 import logging
+import time
+from src.core.metrics import track_db_query
 
 logger = logging.getLogger(__name__)
 
@@ -41,13 +43,21 @@ class TransactionRepository(BaseRepository):
         Raises:
             Exception: If database operation fails
         """
+        start_time = time.time()
         try:
             logger.debug(f"Finding transaction by transaction_id: {transaction_id}")
             result = await self._model.find_unique(
                 where={"transaction_id": transaction_id}
             )
+
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             return result
         except Exception as e:
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             logger.error(
                 f"Error finding transaction by transaction_id {transaction_id}: {str(e)}"
             )
@@ -70,6 +80,7 @@ class TransactionRepository(BaseRepository):
         Raises:
             Exception: If database operation fails
         """
+        start_time = time.time()
         try:
             logger.debug(
                 f"Getting customer history for {customer_email} (last {hours}h)"
@@ -86,9 +97,15 @@ class TransactionRepository(BaseRepository):
                 order={"timestamp": "desc"},
             )
 
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             logger.debug(f"Found {len(results)} transactions for {customer_email}")
             return results
         except Exception as e:
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             logger.error(
                 f"Error getting customer history for {customer_email}: {str(e)}"
             )
@@ -111,6 +128,7 @@ class TransactionRepository(BaseRepository):
         Raises:
             Exception: If database operation fails
         """
+        start_time = time.time()
         try:
             logger.debug(f"Getting IP history for {customer_ip} (last {hours}h)")
 
@@ -121,9 +139,15 @@ class TransactionRepository(BaseRepository):
                 order={"timestamp": "desc"},
             )
 
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             logger.debug(f"Found {len(results)} transactions for IP {customer_ip}")
             return results
         except Exception as e:
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             logger.error(f"Error getting IP history for {customer_ip}: {str(e)}")
             raise
 
@@ -144,6 +168,7 @@ class TransactionRepository(BaseRepository):
         Raises:
             Exception: If database operation fails
         """
+        start_time = time.time()
         try:
             logger.debug(f"Getting transactions from {start_date} to {end_date}")
 
@@ -154,9 +179,15 @@ class TransactionRepository(BaseRepository):
                 order={"timestamp": "desc"},
             )
 
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             logger.debug(f"Found {len(results)} transactions in date range")
             return results
         except Exception as e:
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             logger.error(f"Error getting transactions by date range: {str(e)}")
             raise
 
@@ -172,14 +203,21 @@ class TransactionRepository(BaseRepository):
         Raises:
             Exception: If database operation fails
         """
+        start_time = time.time()
         try:
             logger.debug(f"Counting transactions with risk_level: {risk_level}")
 
             count = await self._model.count(where={"risk_level": risk_level})
 
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             logger.debug(f"Found {count} transactions with risk_level {risk_level}")
             return count
         except Exception as e:
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             logger.error(
                 f"Error counting transactions by risk_level {risk_level}: {str(e)}"
             )
@@ -232,6 +270,7 @@ class TransactionRepository(BaseRepository):
         Raises:
             Exception: If database operation fails
         """
+        start_time = time.time()
         try:
             logger.debug(f"Getting high-risk transactions (score >= {threshold})")
 
@@ -242,9 +281,15 @@ class TransactionRepository(BaseRepository):
                 order={"fraud_score": "desc"},
             )
 
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             logger.debug(f"Found {len(results)} high-risk transactions")
             return results
         except Exception as e:
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             logger.error(f"Error getting high-risk transactions: {str(e)}")
             raise
 
@@ -265,6 +310,7 @@ class TransactionRepository(BaseRepository):
         Raises:
             Exception: If database operation fails
         """
+        start_time = time.time()
         try:
             logger.debug(f"Counting transactions for {customer_email} in last {hours}h")
 
@@ -277,11 +323,17 @@ class TransactionRepository(BaseRepository):
                 }
             )
 
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             logger.debug(
                 f"Customer {customer_email} has {count} transactions in last {hours}h"
             )
             return count
         except Exception as e:
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             logger.error(f"Error counting customer transactions: {str(e)}")
             raise
 
@@ -302,6 +354,7 @@ class TransactionRepository(BaseRepository):
         Raises:
             Exception: If database operation fails
         """
+        start_time = time.time()
         try:
             logger.debug(
                 f"Summing transaction amounts for {customer_email} in last {hours}h"
@@ -316,6 +369,9 @@ class TransactionRepository(BaseRepository):
                 }
             )
 
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             # Sum amounts (convert Decimal to float)
             total = sum(float(tx.amount) for tx in transactions if tx.amount)
 
@@ -324,5 +380,8 @@ class TransactionRepository(BaseRepository):
             )
             return total
         except Exception as e:
+            duration = time.time() - start_time
+            track_db_query("SELECT", "transaction", duration)
+
             logger.error(f"Error summing customer transaction amounts: {str(e)}")
             raise

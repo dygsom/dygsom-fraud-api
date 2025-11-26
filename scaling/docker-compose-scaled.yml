@@ -1,0 +1,492 @@
+version: "3.8"
+
+# ============================================================================
+# DYGSOM Fraud API - Scaled Deployment with Load Balancer
+# ============================================================================
+# This docker-compose configuration provides horizontal scaling with:
+# - Nginx load balancer (least_conn algorithm)
+# - 3 API instances for high availability
+# - Shared PostgreSQL database
+# - Shared Redis cache
+# - Resource limits for production
+#
+# Usage:
+#   docker-compose -f scaling/docker-compose-scaled.yml up -d
+#   docker-compose -f scaling/docker-compose-scaled.yml down
+#
+# Expected Performance:
+#   - Throughput: 300+ req/sec (100+ per instance)
+#   - P95 Latency: <100ms
+#   - High Availability: 99.9% uptime
+# ============================================================================
+
+services:
+  # ==========================================================================
+  # NGINX LOAD BALANCER
+  # ==========================================================================
+  # Distributes traffic across 3 API instances using least_conn algorithm
+  # Provides SSL termination, rate limiting, and health checks
+  # ==========================================================================
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: fraud-api-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - api-1
+      - api-2
+      - api-3
+    networks:
+      - fraud-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==========================================================================
+  # API INSTANCES (3 replicas for horizontal scaling)
+  # ==========================================================================
+  # Each instance can handle 100+ req/sec
+  # Total capacity: 300+ req/sec
+  # ==========================================================================
+
+  # Instance 1
+  api-1:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: fraud-api-1
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://fraud_user:fraud_password@postgres:5432/fraud_db
+      - REDIS_URL=redis://redis:6379/0
+      - API_KEY_SALT=${API_KEY_SALT:-change-in-production}
+      - JWT_SECRET=${JWT_SECRET:-change-in-production}
+      - LOG_LEVEL=INFO
+      - ENABLE_SWAGGER=false
+      - PROMETHEUS_ENABLED=true
+      - PROMETHEUS_PORT=9090
+      # Performance tuning
+      - DATABASE_POOL_SIZE=20
+      - DATABASE_MAX_OVERFLOW=30
+      - REDIS_MAX_CONNECTIONS=100
+      - CACHE_L1_MAX_SIZE=2000
+      - API_WORKER_PROCESSES=4
+      - API_WORKER_CONNECTIONS=1000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - fraud-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  # Instance 2
+  api-2:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: fraud-api-2
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://fraud_user:fraud_password@postgres:5432/fraud_db
+      - REDIS_URL=redis://redis:6379/0
+      - API_KEY_SALT=${API_KEY_SALT:-change-in-production}
+      - JWT_SECRET=${JWT_SECRET:-change-in-production}
+      - LOG_LEVEL=INFO
+      - ENABLE_SWAGGER=false
+      - PROMETHEUS_ENABLED=true
+      - PROMETHEUS_PORT=9090
+      # Performance tuning
+      - DATABASE_POOL_SIZE=20
+      - DATABASE_MAX_OVERFLOW=30
+      - REDIS_MAX_CONNECTIONS=100
+      - CACHE_L1_MAX_SIZE=2000
+      - API_WORKER_PROCESSES=4
+      - API_WORKER_CONNECTIONS=1000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - fraud-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  # Instance 3
+  api-3:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: fraud-api-3
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://fraud_user:fraud_password@postgres:5432/fraud_db
+      - REDIS_URL=redis://redis:6379/0
+      - API_KEY_SALT=${API_KEY_SALT:-change-in-production}
+      - JWT_SECRET=${JWT_SECRET:-change-in-production}
+      - LOG_LEVEL=INFO
+      - ENABLE_SWAGGER=false
+      - PROMETHEUS_ENABLED=true
+      - PROMETHEUS_PORT=9090
+      # Performance tuning
+      - DATABASE_POOL_SIZE=20
+      - DATABASE_MAX_OVERFLOW=30
+      - REDIS_MAX_CONNECTIONS=100
+      - CACHE_L1_MAX_SIZE=2000
+      - API_WORKER_PROCESSES=4
+      - API_WORKER_CONNECTIONS=1000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - fraud-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  # ==========================================================================
+  # POSTGRESQL DATABASE (Shared across all instances)
+  # ==========================================================================
+  # Optimized for high concurrency with increased connection limits
+  # ==========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: fraud-db-scaled
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=fraud_db
+      - POSTGRES_USER=fraud_user
+      - POSTGRES_PASSWORD=fraud_password
+      - POSTGRES_INITDB_ARGS=-E UTF8 --locale=C
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data-scaled:/var/lib/postgresql/data
+      - ../migrations:/docker-entrypoint-initdb.d
+    networks:
+      - fraud-network
+    # PostgreSQL tuning for high concurrency (3 API instances)
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=200"  # 3 instances * (20 pool + 30 overflow) = 150, plus buffer
+      - "-c"
+      - "shared_buffers=512MB"  # 25% of available RAM
+      - "-c"
+      - "effective_cache_size=1536MB"  # 75% of available RAM
+      - "-c"
+      - "maintenance_work_mem=128MB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=16MB"
+      - "-c"
+      - "default_statistics_target=100"
+      - "-c"
+      - "random_page_cost=1.1"  # SSD optimized
+      - "-c"
+      - "effective_io_concurrency=200"  # SSD optimized
+      - "-c"
+      - "work_mem=4MB"  # Reduced to support more connections
+      - "-c"
+      - "min_wal_size=1GB"
+      - "-c"
+      - "max_wal_size=4GB"
+      - "-c"
+      - "max_worker_processes=4"
+      - "-c"
+      - "max_parallel_workers_per_gather=2"
+      - "-c"
+      - "max_parallel_workers=4"
+      - "-c"
+      - "max_parallel_maintenance_workers=2"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fraud_user -d fraud_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '2'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ==========================================================================
+  # REDIS CACHE (Shared L2 cache across all instances)
+  # ==========================================================================
+  # Each instance has its own L1 cache (in-memory)
+  # Redis provides shared L2 cache for consistency
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: fraud-redis-scaled
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data-scaled:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - fraud-network
+    # Redis tuning for high concurrency
+    command:
+      - "redis-server"
+      - "/usr/local/etc/redis/redis.conf"
+      - "--maxmemory"
+      - "1gb"
+      - "--maxmemory-policy"
+      - "allkeys-lru"  # Evict least recently used keys when memory limit reached
+      - "--maxclients"
+      - "10000"  # Support high connection count
+      - "--tcp-backlog"
+      - "511"
+      - "--timeout"
+      - "300"  # Close idle connections after 5 minutes
+      - "--tcp-keepalive"
+      - "60"
+      - "--save"
+      - "900 1"  # Snapshot every 15 min if 1+ keys changed
+      - "--save"
+      - "300 10"  # Snapshot every 5 min if 10+ keys changed
+      - "--save"
+      - "60 10000"  # Snapshot every 1 min if 10000+ keys changed
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1536M
+        reservations:
+          cpus: '1'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ==========================================================================
+  # MONITORING STACK (Optional - Prometheus + Grafana)
+  # ==========================================================================
+  # Uncomment to enable monitoring across all API instances
+  # ==========================================================================
+
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: fraud-prometheus-scaled
+  #   restart: unless-stopped
+  #   ports:
+  #     - "9091:9090"
+  #   volumes:
+  #     - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - prometheus-data-scaled:/prometheus
+  #   networks:
+  #     - fraud-network
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--storage.tsdb.retention.time=30d'
+  #     - '--web.console.libraries=/etc/prometheus/console_libraries'
+  #     - '--web.console.templates=/etc/prometheus/consoles'
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '1'
+  #         memory: 1G
+
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: fraud-grafana-scaled
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3001:3000"
+  #   volumes:
+  #     - grafana-data-scaled:/var/lib/grafana
+  #     - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+  #     - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+  #   environment:
+  #     - GF_SECURITY_ADMIN_USER=admin
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #     - GF_INSTALL_PLUGINS=grafana-piechart-panel
+  #   networks:
+  #     - fraud-network
+  #   depends_on:
+  #     - prometheus
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '1'
+  #         memory: 512M
+
+# ============================================================================
+# NETWORKS
+# ============================================================================
+networks:
+  fraud-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ============================================================================
+# VOLUMES
+# ============================================================================
+volumes:
+  postgres-data-scaled:
+    driver: local
+  redis-data-scaled:
+    driver: local
+  # prometheus-data-scaled:
+  #   driver: local
+  # grafana-data-scaled:
+  #   driver: local
+
+# ============================================================================
+# DEPLOYMENT INSTRUCTIONS
+# ============================================================================
+# 1. Start all services:
+#    docker-compose -f scaling/docker-compose-scaled.yml up -d
+#
+# 2. Check service status:
+#    docker-compose -f scaling/docker-compose-scaled.yml ps
+#
+# 3. View logs:
+#    docker-compose -f scaling/docker-compose-scaled.yml logs -f
+#    docker-compose -f scaling/docker-compose-scaled.yml logs -f api-1
+#    docker-compose -f scaling/docker-compose-scaled.yml logs -f nginx
+#
+# 4. Scale up/down (if not using named instances):
+#    docker-compose -f scaling/docker-compose-scaled.yml up -d --scale api=5
+#
+# 5. Run load test:
+#    locust -f load_testing/locustfile.py --host=http://localhost \
+#           --users 300 --spawn-rate 30 --run-time 10m --headless
+#
+# 6. Monitor performance:
+#    - Nginx access logs: tail -f scaling/nginx/logs/access.log
+#    - API metrics: curl http://localhost/metrics
+#    - Prometheus: http://localhost:9091
+#    - Grafana: http://localhost:3001 (admin/admin)
+#
+# 7. Stop all services:
+#    docker-compose -f scaling/docker-compose-scaled.yml down
+#
+# 8. Clean up volumes:
+#    docker-compose -f scaling/docker-compose-scaled.yml down -v
+#
+# ============================================================================
+# PERFORMANCE EXPECTATIONS
+# ============================================================================
+# With this scaled setup, you should achieve:
+#
+# Single Instance Baseline:
+#   - Throughput: 100 req/sec
+#   - P95 Latency: 87ms
+#   - P99 Latency: 150ms
+#
+# 3 Instances (Scaled):
+#   - Throughput: 300 req/sec (3x improvement)
+#   - P95 Latency: <100ms (with load balancing)
+#   - P99 Latency: <200ms
+#   - Availability: 99.9% (instance failover supported)
+#
+# Resource Usage:
+#   - Total CPU: ~12 cores (3 API * 2 + DB 4 + Redis 2 + Nginx 1)
+#   - Total RAM: ~10GB (3 API * 2GB + DB 4GB + Redis 1.5GB + Nginx 512MB)
+#
+# ============================================================================

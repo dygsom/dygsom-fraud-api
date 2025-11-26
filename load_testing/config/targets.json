@@ -1,0 +1,144 @@
+{
+  "description": "Performance targets and SLAs for DYGSOM Fraud API",
+  "version": "1.0.0",
+  "last_updated": "2025-01-25",
+  "sla": {
+    "/api/v1/fraud/score": {
+      "p50_response_time_ms": 50,
+      "p95_response_time_ms": 100,
+      "p99_response_time_ms": 200,
+      "max_response_time_ms": 500,
+      "throughput_rps": 100,
+      "error_rate_percent_max": 0.1,
+      "availability_percent": 99.9
+    },
+    "/health": {
+      "p95_response_time_ms": 10,
+      "p99_response_time_ms": 20,
+      "error_rate_percent_max": 0.0,
+      "availability_percent": 99.99
+    },
+    "/health/ready": {
+      "p95_response_time_ms": 50,
+      "p99_response_time_ms": 100,
+      "error_rate_percent_max": 0.0,
+      "availability_percent": 99.9
+    }
+  },
+  "load_capacity": {
+    "single_instance": {
+      "concurrent_users": 100,
+      "peak_rps": 100,
+      "sustained_rps": 80,
+      "duration_minutes": 60
+    },
+    "scaled_3_instances": {
+      "concurrent_users": 300,
+      "peak_rps": 300,
+      "sustained_rps": 250,
+      "duration_minutes": 60
+    },
+    "production_target": {
+      "concurrent_users": 500,
+      "peak_rps": 500,
+      "sustained_rps": 400,
+      "duration_minutes": 120
+    }
+  },
+  "system_limits": {
+    "cpu_usage_percent_max": 70,
+    "memory_usage_percent_max": 80,
+    "database_connections_max": 100,
+    "redis_memory_mb_max": 512,
+    "disk_usage_percent_max": 80
+  },
+  "cache_targets": {
+    "l1_hit_rate_percent_min": 85,
+    "l2_hit_rate_percent_min": 90,
+    "overall_hit_rate_percent_min": 90,
+    "cache_latency_ms_max": 1.0
+  },
+  "database_targets": {
+    "avg_query_duration_ms_max": 20,
+    "p95_query_duration_ms_max": 50,
+    "p99_query_duration_ms_max": 100,
+    "connection_pool_usage_percent_max": 70,
+    "slow_queries_per_minute_max": 0
+  },
+  "ml_targets": {
+    "avg_inference_time_ms_max": 10,
+    "p95_inference_time_ms_max": 20,
+    "p99_inference_time_ms_max": 50,
+    "feature_extraction_time_ms_max": 10,
+    "model_load_time_seconds_max": 5
+  },
+  "alerting_thresholds": {
+    "critical": {
+      "p95_response_time_ms": 200,
+      "error_rate_percent": 1.0,
+      "cpu_usage_percent": 90,
+      "memory_usage_percent": 90,
+      "database_connections_percent": 90
+    },
+    "warning": {
+      "p95_response_time_ms": 150,
+      "error_rate_percent": 0.5,
+      "cpu_usage_percent": 80,
+      "memory_usage_percent": 80,
+      "database_connections_percent": 80
+    }
+  },
+  "test_scenarios": {
+    "baseline": {
+      "description": "Baseline test with minimal load",
+      "users": 10,
+      "spawn_rate": 2,
+      "duration_minutes": 5,
+      "expected_rps": 20
+    },
+    "normal_load": {
+      "description": "Normal production load",
+      "users": 50,
+      "spawn_rate": 5,
+      "duration_minutes": 10,
+      "expected_rps": 80
+    },
+    "stress": {
+      "description": "Stress test to find breaking point",
+      "users": 100,
+      "spawn_rate": 10,
+      "duration_minutes": 10,
+      "expected_rps": 100
+    },
+    "spike": {
+      "description": "Sudden traffic spike",
+      "users": 200,
+      "spawn_rate": 50,
+      "duration_minutes": 2,
+      "expected_rps": 150
+    },
+    "endurance": {
+      "description": "Long-running stability test",
+      "users": 50,
+      "spawn_rate": 5,
+      "duration_minutes": 60,
+      "expected_rps": 80
+    }
+  },
+  "regression_prevention": {
+    "description": "Thresholds to prevent performance regression",
+    "p95_degradation_percent_max": 10,
+    "throughput_degradation_percent_max": 5,
+    "error_rate_increase_percent_max": 0.1
+  },
+  "notes": [
+    "SLA targets are based on production requirements",
+    "Load capacity targets assume optimized configuration",
+    "System limits include safety margins (30% headroom)",
+    "Cache hit rates are critical for maintaining performance",
+    "Database query optimization is essential for meeting SLAs",
+    "ML inference time includes feature extraction",
+    "Test scenarios should be run regularly in CI/CD pipeline",
+    "Regression tests should run before each production deployment"
+  ]
+}

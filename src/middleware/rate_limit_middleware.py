@@ -10,6 +10,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 from src.core.rate_limiter import RateLimiter
 from src.dependencies import get_redis_client
+from src.core.metrics import track_rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             )
             
             if not allowed:
+                # Track rate limit hit with 0 remaining
+                track_rate_limit(api_key_data.name, 0)
+
                 logger.warning(
                     "Rate limit exceeded",
                     extra={
@@ -109,6 +113,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     }
                 )
             
+            # Track rate limit metrics
+            track_rate_limit(api_key_data.name, remaining)
+
             logger.debug(
                 "Rate limit check passed",
                 extra={
@@ -118,14 +125,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     "limit": rate_limit
                 }
             )
-            
+
             # Continue to next middleware/endpoint
             response = await call_next(request)
-            
+
             # Add rate limit headers to response
             response.headers["X-RateLimit-Limit"] = str(rate_limit)
             response.headers["X-RateLimit-Remaining"] = str(remaining)
-            
+
             return response
             
         except Exception as e:

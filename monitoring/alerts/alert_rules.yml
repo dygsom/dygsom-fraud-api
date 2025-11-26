@@ -1,0 +1,127 @@
+groups:
+  - name: api_alerts
+    interval: 30s
+    rules:
+      - alert: HighErrorRate
+        expr: rate(api_request_errors_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High API error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(api_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency (P95 > 1s)"
+          description: "P95 latency is {{ $value }}s (threshold: 1s)"
+
+      - alert: APIDown
+        expr: up{job="dygsom-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API is down"
+          description: "The fraud API is not responding to Prometheus scrapes"
+
+  - name: ml_alerts
+    interval: 30s
+    rules:
+      - alert: HighFraudRate
+        expr: fraud_rate_percentage > 10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High fraud rate detected"
+          description: "Fraud rate is {{ $value }}% (threshold: 10%)"
+
+      - alert: MLPredictionErrors
+        expr: rate(ml_prediction_errors_total[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ML prediction errors increasing"
+          description: "ML error rate: {{ $value }}/s"
+
+      - alert: MLLatencyHigh
+        expr: histogram_quantile(0.95, rate(ml_prediction_duration_seconds_bucket[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ML prediction latency too high"
+          description: "P95 ML latency is {{ $value }}s (threshold: 50ms)"
+
+  - name: database_alerts
+    interval: 30s
+    rules:
+      - alert: DatabaseConnectionIssues
+        expr: db_connections_active > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of database connections"
+          description: "Active connections: {{ $value }} (threshold: 50)"
+
+      - alert: SlowDatabaseQueries
+        expr: histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow database queries detected"
+          description: "P95 query duration: {{ $value }}s (threshold: 1s)"
+
+      - alert: DatabaseErrors
+        expr: rate(db_errors_total[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database errors increasing"
+          description: "DB error rate: {{ $value }}/s"
+
+  - name: cache_alerts
+    interval: 30s
+    rules:
+      - alert: LowCacheHitRate
+        expr: |
+          sum(rate(cache_hits_total[5m])) / 
+          (sum(rate(cache_hits_total[5m])) + sum(rate(cache_misses_total[5m]))) < 0.5
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} (threshold: 50%)"
+
+  - name: business_alerts
+    interval: 60s
+    rules:
+      - alert: UnusualTransactionVolume
+        expr: rate(transaction_volume_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "Unusual transaction volume"
+          description: "Transaction rate: {{ $value }}/s"
+
+      - alert: HighCriticalRiskTransactions
+        expr: |
+          sum(rate(risk_level_distribution_total{risk_level="CRITICAL"}[5m])) / 
+          sum(rate(risk_level_distribution_total[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High percentage of CRITICAL risk transactions"
+          description: "CRITICAL rate: {{ $value | humanizePercentage }} (threshold: 5%)"

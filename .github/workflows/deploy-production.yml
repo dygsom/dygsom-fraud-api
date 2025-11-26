@@ -1,0 +1,342 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version/tag to deploy (e.g., v1.0.0)'
+        required: true
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  verify-version:
+    name: Verify Version Exists
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag exists
+        run: |
+          echo "🔍 Verifying version ${{ inputs.version }}..."
+
+          if git rev-parse ${{ inputs.version }} >/dev/null 2>&1; then
+            echo "✅ Version ${{ inputs.version }} exists"
+          else
+            echo "❌ Version ${{ inputs.version }} does not exist"
+            echo "Available tags:"
+            git tag -l
+            exit 1
+          fi
+
+  backup:
+    name: Backup Current Deployment
+    runs-on: ubuntu-latest
+    needs: verify-version
+    environment: production
+
+    steps:
+      - name: Create backup of current deployment
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          port: 22
+          script: |
+            echo "💾 Creating backup of current deployment..."
+
+            cd /opt/dygsom-fraud-api/deployment/production
+
+            # Create backup directory
+            BACKUP_DIR="/opt/dygsom-fraud-api/backups"
+            mkdir -p $BACKUP_DIR
+
+            # Backup current docker-compose configuration
+            BACKUP_FILE="$BACKUP_DIR/backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+
+            # Save current running image info
+            docker compose ps -a > $BACKUP_DIR/containers-$(date +%Y%m%d-%H%M%S).txt
+
+            # Backup database (optional but recommended)
+            echo "💾 Backing up database..."
+            docker compose exec -T postgres pg_dump -U postgres dygsom > $BACKUP_DIR/db-backup-$(date +%Y%m%d-%H%M%S).sql
+
+            # Create tarball of current deployment
+            tar -czf $BACKUP_FILE docker-compose.yml .env
+
+            echo "✅ Backup created: $BACKUP_FILE"
+
+            # Keep only last 10 backups
+            ls -t $BACKUP_DIR/backup-*.tar.gz | tail -n +11 | xargs -r rm
+
+            echo "✅ Backup completed successfully!"
+
+  deploy-production:
+    name: Deploy to Production (Blue-Green)
+    runs-on: ubuntu-latest
+    needs: backup
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.version }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ inputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.version }}
+            type=raw,value=production-latest
+            type=raw,value=${{ inputs.version }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to production server (Blue-Green)
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          port: 22
+          script: |
+            echo "🚀 Starting Blue-Green deployment to production..."
+            echo "📌 Version: ${{ inputs.version }}"
+
+            # Navigate to deployment directory
+            cd /opt/dygsom-fraud-api/deployment/production
+
+            # Set environment variables
+            export DOCKER_REGISTRY=${{ env.REGISTRY }}
+            export IMAGE_NAME=${{ env.IMAGE_NAME }}
+            export IMAGE_TAG=${{ inputs.version }}
+
+            # Pull latest Docker image
+            echo "📦 Pulling Docker image for version ${{ inputs.version }}..."
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.version }}
+
+            # Run database migrations (critical step)
+            echo "🗄️ Running database migrations..."
+            docker compose run --rm api npx prisma migrate deploy
+
+            # Blue-Green Deployment Strategy
+            echo "🔵 Starting new version (Green)..."
+
+            # Get current container name
+            OLD_CONTAINER=$(docker compose ps -q api | head -n1)
+
+            # Start new container alongside old one
+            docker compose up -d --no-deps --scale api=2 --no-recreate api
+
+            # Wait for new container to be ready
+            echo "⏳ Waiting for new container to start..."
+            sleep 15
+
+            # Get new container
+            NEW_CONTAINER=$(docker compose ps -q api | grep -v $OLD_CONTAINER | head -n1)
+
+            # Health check on new container
+            echo "🏥 Running health checks on new container..."
+            MAX_RETRIES=5
+            RETRY_COUNT=0
+
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              if docker exec $NEW_CONTAINER curl -f http://localhost:3000/health/ready 2>/dev/null; then
+                echo "✅ New container health check passed!"
+                break
+              else
+                echo "⚠️ Health check failed, retrying... ($((RETRY_COUNT+1))/$MAX_RETRIES)"
+                RETRY_COUNT=$((RETRY_COUNT+1))
+                sleep 5
+              fi
+            done
+
+            if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+              echo "❌ New container health check failed. Rolling back..."
+              docker logs $NEW_CONTAINER
+              docker compose up -d --scale api=1 --no-deps api
+              docker rm -f $NEW_CONTAINER
+              exit 1
+            fi
+
+            # Switch traffic to new container (stop old one)
+            echo "🔀 Switching traffic to new container..."
+            docker stop $OLD_CONTAINER
+            docker compose up -d --scale api=1 --no-deps api
+
+            # Final health check
+            sleep 5
+            if curl -f http://localhost:3000/health/ready; then
+              echo "✅ Production deployment successful!"
+
+              # Remove old container
+              docker rm $OLD_CONTAINER
+
+              # Cleanup old images
+              echo "🧹 Cleaning up old images..."
+              docker image prune -f
+            else
+              echo "❌ Final health check failed. Manual intervention required!"
+              exit 1
+            fi
+
+            echo "✅ Blue-Green deployment completed successfully!"
+
+      - name: Run production smoke tests
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          port: 22
+          script: |
+            echo "🧪 Running production smoke tests..."
+            cd /opt/dygsom-fraud-api/deployment/scripts
+            chmod +x smoke-tests.sh
+
+            # Pass production API key for authenticated tests
+            export TEST_API_KEY=${{ secrets.PRODUCTION_API_KEY }}
+            ./smoke-tests.sh production
+
+      - name: Tag deployment in GitHub
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: '${{ inputs.version }}',
+              environment: 'production',
+              description: 'Production deployment of ${{ inputs.version }}',
+              auto_merge: false,
+              required_contexts: []
+            })
+
+      - name: Notify Slack on success
+        if: success()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "🚀 Production Deployment Successful",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🚀 Production Deployment Successful"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:*\nProduction"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Version:*\n${{ inputs.version }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Deployed by:*\n${{ github.actor }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Strategy:*\nBlue-Green Deployment"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "✅ All health checks and smoke tests passed!"
+                  }
+                }
+              ]
+            }
+        continue-on-error: true
+
+      - name: Notify Slack on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "❌ Production Deployment Failed",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "❌ Production Deployment Failed"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:*\nProduction"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Version:*\n${{ inputs.version }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Attempted by:*\n${{ github.actor }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Workflow:*\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Logs>"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "⚠️ *Action Required:* Check logs and consider rollback if necessary."
+                  }
+                }
+              ]
+            }
+        continue-on-error: true

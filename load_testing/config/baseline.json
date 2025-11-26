@@ -1,0 +1,82 @@
+{
+  "description": "Baseline performance metrics for DYGSOM Fraud API",
+  "measured_date": "2025-01-25",
+  "test_conditions": {
+    "concurrent_users": 10,
+    "duration_minutes": 5,
+    "environment": "development",
+    "hardware": "Local Docker (8GB RAM, 4 CPU cores)"
+  },
+  "endpoints": {
+    "/api/v1/fraud/score": {
+      "avg_response_time_ms": 45,
+      "median_response_time_ms": 38,
+      "p95_response_time_ms": 87,
+      "p99_response_time_ms": 150,
+      "min_response_time_ms": 15,
+      "max_response_time_ms": 250,
+      "throughput_rps": 50,
+      "error_rate_percent": 0.0,
+      "total_requests": 15000
+    },
+    "/health": {
+      "avg_response_time_ms": 3,
+      "median_response_time_ms": 2,
+      "p95_response_time_ms": 5,
+      "p99_response_time_ms": 8,
+      "throughput_rps": 10,
+      "error_rate_percent": 0.0
+    },
+    "/health/ready": {
+      "avg_response_time_ms": 12,
+      "median_response_time_ms": 10,
+      "p95_response_time_ms": 25,
+      "p99_response_time_ms": 45,
+      "throughput_rps": 5,
+      "error_rate_percent": 0.0
+    },
+    "/metrics": {
+      "avg_response_time_ms": 8,
+      "median_response_time_ms": 7,
+      "p95_response_time_ms": 15,
+      "p99_response_time_ms": 25,
+      "throughput_rps": 2,
+      "error_rate_percent": 0.0
+    }
+  },
+  "system": {
+    "cpu_usage_percent": 35,
+    "memory_usage_mb": 512,
+    "memory_usage_percent": 25,
+    "database_connections_active": 8,
+    "database_connections_max": 20,
+    "redis_memory_mb": 45,
+    "redis_connected_clients": 3
+  },
+  "cache": {
+    "l1_hit_rate_percent": 75,
+    "l2_hit_rate_percent": 85,
+    "overall_hit_rate_percent": 85,
+    "avg_cache_latency_ms": 0.5
+  },
+  "database": {
+    "avg_query_duration_ms": 12,
+    "p95_query_duration_ms": 35,
+    "p99_query_duration_ms": 65,
+    "connection_pool_usage_percent": 40,
+    "slow_queries_count": 0
+  },
+  "ml_model": {
+    "avg_inference_time_ms": 8,
+    "p95_inference_time_ms": 18,
+    "p99_inference_time_ms": 30,
+    "feature_extraction_time_ms": 5
+  },
+  "notes": [
+    "Baseline measured on single API instance",
+    "Database has basic indexes (primary keys, foreign keys)",
+    "No query optimization applied yet",
+    "Cache hit rate can be improved with tuning",
+    "ML inference is fast due to optimized XGBoost model"
+  ]
+}

@@ -6,6 +6,8 @@ Implements Repository Pattern with type-safe CRUD operations.
 from typing import TypeVar, Generic, Optional, List, Dict, Any
 from prisma import Prisma
 import logging
+import time
+from src.core.metrics import track_db_query
 
 T = TypeVar("T")
 
@@ -42,11 +44,19 @@ class BaseRepository(Generic[T]):
         Raises:
             Exception: If database operation fails
         """
+        start_time = time.time()
         try:
             logger.debug(f"Finding {self.model_name} by id: {id}")
             result = await self._model.find_unique(where={"id": id})
+
+            duration = time.time() - start_time
+            track_db_query("SELECT", self.model_name, duration)
+
             return result
         except Exception as e:
+            duration = time.time() - start_time
+            track_db_query("SELECT", self.model_name, duration)
+
             logger.error(f"Error finding {self.model_name} by id {id}: {str(e)}")
             raise
 
@@ -63,13 +73,21 @@ class BaseRepository(Generic[T]):
         Raises:
             Exception: If database operation fails
         """
+        start_time = time.time()
         try:
             logger.debug(f"Finding all {self.model_name} (skip={skip}, limit={limit})")
             results = await self._model.find_many(
                 skip=skip, take=limit, order={"created_at": "desc"}
             )
+
+            duration = time.time() - start_time
+            track_db_query("SELECT", self.model_name, duration)
+
             return results
         except Exception as e:
+            duration = time.time() - start_time
+            track_db_query("SELECT", self.model_name, duration)
+
             logger.error(f"Error finding all {self.model_name}: {str(e)}")
             raise
 
@@ -85,12 +103,20 @@ class BaseRepository(Generic[T]):
         Raises:
             Exception: If database operation fails
         """
+        start_time = time.time()
         try:
             logger.info(f"Creating {self.model_name}")
             result = await self._model.create(data=data)
+
+            duration = time.time() - start_time
+            track_db_query("INSERT", self.model_name, duration)
+
             logger.info(f"Created {self.model_name} with id: {result.id}")
             return result
         except Exception as e:
+            duration = time.time() - start_time
+            track_db_query("INSERT", self.model_name, duration)
+
             logger.error(f"Error creating {self.model_name}: {str(e)}")
             raise
 
@@ -107,12 +133,20 @@ class BaseRepository(Generic[T]):
         Raises:
             Exception: If database operation fails
         """
+        start_time = time.time()
         try:
             logger.info(f"Updating {self.model_name} with id: {id}")
             result = await self._model.update(where={"id": id}, data=data)
+
+            duration = time.time() - start_time
+            track_db_query("UPDATE", self.model_name, duration)
+
             logger.info(f"Updated {self.model_name} with id: {id}")
             return result
         except Exception as e:
+            duration = time.time() - start_time
+            track_db_query("UPDATE", self.model_name, duration)
+
             logger.error(f"Error updating {self.model_name} with id {id}: {str(e)}")
             raise
 
@@ -128,12 +162,20 @@ class BaseRepository(Generic[T]):
         Raises:
             Exception: If database operation fails
         """
+        start_time = time.time()
         try:
             logger.info(f"Deleting {self.model_name} with id: {id}")
             await self._model.delete(where={"id": id})
+
+            duration = time.time() - start_time
+            track_db_query("DELETE", self.model_name, duration)
+
             logger.info(f"Deleted {self.model_name} with id: {id}")
             return True
         except Exception as e:
+            duration = time.time() - start_time
+            track_db_query("DELETE", self.model_name, duration)
+
             logger.error(f"Error deleting {self.model_name} with id {id}: {str(e)}")
             raise
 
@@ -149,11 +191,19 @@ class BaseRepository(Generic[T]):
         Raises:
             Exception: If database operation fails
         """
+        start_time = time.time()
         try:
             logger.debug(f"Counting {self.model_name}")
             count = await self._model.count(where=where or {})
+
+            duration = time.time() - start_time
+            track_db_query("SELECT", self.model_name, duration)
+
             return count
         except Exception as e:
+            duration = time.time() - start_time
+            track_db_query("SELECT", self.model_name, duration)
+
             logger.error(f"Error counting {self.model_name}: {str(e)}")
             raise
 

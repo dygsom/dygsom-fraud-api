@@ -2,16 +2,24 @@
 Fraud Service - Business logic for fraud detection.
 Implements fraud scoring with ML model and velocity checks.
 Day 6: Integrated with XGBoost via FeatureEngineer and MLService.
+Day 7: Added Prometheus metrics tracking.
 """
 
 from typing import Dict, Any, Optional
 import logging
+import time
 from datetime import datetime
 from src.repositories.transaction_repository import TransactionRepository
 from src.repositories.cache_repository import CacheRepository
 from src.schemas.transaction_schemas import CreateTransactionDto, TransactionResponseDto
 from src.ml.features.feature_engineering import FeatureEngineer
 from src.ml.ml_service import MLService
+from src.core.metrics import (
+    track_prediction,
+    track_transaction,
+    track_feature_extraction,
+    track_ml_error,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -111,16 +119,19 @@ class FraudService:
             
             # 2. Calculate fraud score
             # TODO: Replace with actual ML model prediction when ready
+            ml_start_time = time.time()
             fraud_score = await self._calculate_fraud_score(
                 transaction_data,
                 velocity_features
             )
+            ml_duration = time.time() - ml_start_time
             
             logger.debug(
                 "Fraud score calculated",
                 extra={
                     "transaction_id": transaction_data.transaction_id,
-                    "fraud_score": fraud_score
+                    "fraud_score": fraud_score,
+                    "ml_duration_ms": ml_duration * 1000
                 }
             )
             
@@ -129,6 +140,23 @@ class FraudService:
             
             # 4. Generate recommendation
             recommendation = self._generate_recommendation(fraud_score, risk_level)
+            
+            # Track ML prediction metrics (Day 7)
+            model_version = getattr(self.ml_service, 'model_version', 'unknown') or "unknown"
+            track_prediction(
+                model_version=model_version,
+                fraud_score=fraud_score,
+                risk_level=risk_level,
+                recommendation=recommendation,
+                duration=ml_duration,
+            )
+            
+            # Track transaction business metrics (Day 7)
+            track_transaction(
+                amount=transaction_data.amount,
+                currency=transaction_data.currency,
+                risk_level=risk_level,
+            )
             
             logger.info(
                 "Fraud analysis completed",
@@ -306,6 +334,7 @@ class FraudService:
         """Calculate fraud score using ML model
         
         Day 6: Uses FeatureEngineer to extract 70+ features and MLService for prediction.
+        Day 7: Added metrics tracking for ML predictions.
         
         Args:
             transaction_data: Transaction data
@@ -314,7 +343,12 @@ class FraudService:
         Returns:
             Fraud score between 0.0 and 1.0
         """
+        ml_start_time = time.time()
+        
         try:
+            # Track feature extraction time
+            feature_start_time = time.time()
+            
             # Convert DTO to dictionary for feature extraction
             transaction_dict = {
                 'transaction_id': transaction_data.transaction_id,
@@ -341,11 +375,15 @@ class FraudService:
                 velocity_features
             )
             
+            feature_duration = time.time() - feature_start_time
+            track_feature_extraction("all_features", feature_duration)
+            
             logger.debug(
                 "Features extracted for ML prediction",
                 extra={
                     "transaction_id": transaction_data.transaction_id,
-                    "feature_count": len(all_features)
+                    "feature_count": len(all_features),
+                    "feature_extraction_ms": feature_duration * 1000
                 }
             )
             
@@ -354,6 +392,7 @@ class FraudService:
             
             # Extract fraud_probability (0-1)
             fraud_score = ml_result.get('fraud_probability', 0.0)
+            model_version = self.ml_service.model_version or "unknown"
             
             logger.info(
                 "ML prediction completed",
@@ -362,6 +401,7 @@ class FraudService:
                     "fraud_score": fraud_score,
                     "fraud_score_100": ml_result.get('fraud_score'),
                     "model_used": ml_result.get('model_used'),
+                    "model_version": model_version,
                     "confidence": ml_result.get('confidence')
                 }
             )
@@ -369,11 +409,18 @@ class FraudService:
             return fraud_score
             
         except Exception as e:
+            ml_duration = time.time() - ml_start_time
+            model_version = getattr(self.ml_service, 'model_version', 'unknown') or "unknown"
+            
+            # Track ML error
+            track_ml_error(model_version, type(e).__name__)
+            
             logger.error(
                 "Error in ML fraud scoring, falling back to 0.0",
                 extra={
                     "transaction_id": transaction_data.transaction_id,
-                    "error": str(e)
+                    "error": str(e),
+                    "model_version": model_version
                 },
                 exc_info=True
             )
