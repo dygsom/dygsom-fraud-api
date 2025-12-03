@@ -1,4 +1,4 @@
-"""  
+"""
 Dependency injection for FastAPI.
 Provides instances of services and repositories with proper initialization.
 """
@@ -6,10 +6,15 @@ Provides instances of services and repositories with proper initialization.
 import os
 from redis import Redis
 from prisma import Prisma
+from fastapi import HTTPException, Header, status
+import jwt
+from typing import Optional
+
 from src.services.fraud_service import FraudService
 from src.repositories.transaction_repository import TransactionRepository
 from src.repositories.cache_repository import CacheRepository
 from src.core.cache import CacheService
+from src.core.config import settings
 from src.ml.ml_service import MLService
 import logging
 
@@ -146,3 +151,104 @@ async def get_fraud_service() -> FraudService:
             exc_info=True,
         )
         raise
+
+
+async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
+    """
+    Dependency to get current authenticated user from JWT token.
+
+    Extracts and validates JWT token from Authorization header.
+    Returns user payload if token is valid.
+
+    Args:
+        authorization: Authorization header (format: "Bearer <token>")
+
+    Returns:
+        Dictionary with user information from JWT payload:
+        {
+            "user_id": str,
+            "email": str,
+            "organization_id": str,
+            "role": str
+        }
+
+    Raises:
+        HTTPException 401: If token is missing, invalid, or expired
+
+    Usage:
+        @router.get("/protected")
+        async def protected_route(current_user: dict = Depends(get_current_user)):
+            user_id = current_user["user_id"]
+            ...
+    """
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authorization header",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+
+    try:
+        # Extract token from "Bearer <token>"
+        parts = authorization.split()
+
+        if len(parts) != 2:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authorization header format. Expected: Bearer <token>",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+
+        scheme, token = parts
+
+        if scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication scheme. Expected: Bearer",
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+
+        # Decode JWT token
+        payload = jwt.decode(
+            token,
+            settings.JWT_SECRET,
+            algorithms=["HS256"]
+        )
+
+        # Validate required fields
+        required_fields = ["user_id", "email"]
+        for field in required_fields:
+            if field not in payload:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"Invalid token: missing {field}",
+                    headers={"WWW-Authenticate": "Bearer"}
+                )
+
+        logger.debug(f"User authenticated: {payload.get('email')}")
+
+        return payload
+
+    except jwt.ExpiredSignatureError:
+        logger.warning("Expired JWT token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    except jwt.InvalidTokenError as e:
+        logger.warning(f"Invalid JWT token: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Authentication error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication failed",
+            headers={"WWW-Authenticate": "Bearer"}
+        )

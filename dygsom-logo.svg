@@ -1,0 +1,37 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E0F2FE;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#BAE6FD;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#gradient)" stroke="#0EA5E9" stroke-width="3"/>
+  
+  <!-- Shield Shape (Security) -->
+  <path d="M32 10L22 14V26C22 35 28 42 32 44C36 42 42 35 42 26V14L32 10Z" 
+        fill="white" 
+        stroke="#0EA5E9" 
+        stroke-width="2.5"/>
+  
+  <!-- Data Points and Connections (Analytics) -->
+  <circle cx="27" cy="22" r="2.5" fill="#0EA5E9"/>
+  <circle cx="37" cy="20" r="2.5" fill="#0EA5E9"/>
+  <circle cx="32" cy="30" r="2.5" fill="#0EA5E9"/>
+  <circle cx="25" cy="34" r="2.5" fill="#0EA5E9"/>
+  <circle cx="39" cy="32" r="2.5" fill="#0EA5E9"/>
+  
+  <!-- Connection Lines -->
+  <line x1="27" y1="22" x2="32" y2="30" stroke="#0EA5E9" stroke-width="1.5" opacity="0.6"/>
+  <line x1="37" y1="20" x2="32" y2="30" stroke="#0EA5E9" stroke-width="1.5" opacity="0.6"/>
+  <line x1="32" y1="30" x2="25" y2="34" stroke="#0EA5E9" stroke-width="1.5" opacity="0.6"/>
+  <line x1="32" y1="30" x2="39" y2="32" stroke="#0EA5E9" stroke-width="1.5" opacity="0.6"/>
+  
+  <!-- AI/Tech Elements (Chart Bars) -->
+  <rect x="18" y="48" width="3" height="10" rx="1" fill="#0EA5E9" opacity="0.4"/>
+  <rect x="24" y="44" width="3" height="14" rx="1" fill="#0EA5E9" opacity="0.6"/>
+  <rect x="30" y="46" width="3" height="12" rx="1" fill="#0EA5E9" opacity="0.8"/>
+  <rect x="36" y="42" width="3" height="16" rx="1" fill="#0EA5E9"/>
+  <rect x="42" y="48" width="3" height="10" rx="1" fill="#0EA5E9" opacity="0.4"/>
+</svg>

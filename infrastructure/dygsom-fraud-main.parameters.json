@@ -1,0 +1,30 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "brazilsouth"
+    },
+    "envName": {
+      "value": "dev"
+    },
+    "postgresAdminUser": {
+      "value": "pgadmin"
+    },
+    "postgresAdminPassword": {
+      "value": "Pgpass$321"
+    },
+    "apiImage": {
+      "value": "ghcr.io/dygsom/dygsom-fraud-api:latest"
+    },
+    "postgresDatabaseName": {
+      "value": "dygsom_fraud"
+    },
+    "appServiceSku": {
+      "value": "B1"
+    },
+    "appServiceTier": {
+      "value": "Basic"
+    }
+  }
+}

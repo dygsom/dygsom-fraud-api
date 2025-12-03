@@ -227,6 +227,7 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
+        "http://localhost:3001",  # Next.js dashboard
         "http://localhost:8080"
     ]
 

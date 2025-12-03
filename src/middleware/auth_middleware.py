@@ -20,7 +20,8 @@ EXCLUDED_PATHS = [
     "/docs",
     "/openapi.json",
     "/redoc",
-    "/metrics"
+    "/metrics",
+    "/api/v1/auth/"  # Auth endpoints (signup, login, etc.)
 ]
 
 

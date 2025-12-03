@@ -112,27 +112,69 @@ model Blocklist {
   @@map("blocklists")
 }
 
-model ApiKey {
-  id           String   @id @default(uuid())
-  key_hash     String   @unique
-  name         String
-  description  String?
-  
-  // Permissions
-  is_active    Boolean  @default(true)
-  rate_limit   Int      @default(100) // requests per minute
-  
-  // Usage tracking
-  last_used_at DateTime?
-  request_count Int     @default(0)
-  
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  password_hash   String
+  name            String?
+  role            String   @default("user") // "user" or "admin"
+
+  // Organization relationship
+  organization_id String?
+  organization    Organization? @relation(fields: [organization_id], references: [id])
+
+  // Activity tracking
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  last_login_at   DateTime?
+
+  @@index([email])
+  @@index([organization_id])
+  @@map("users")
+}
+
+model Organization {
+  id         String   @id @default(uuid())
+  name       String
+  plan       String   @default("startup") // "startup", "growth", "enterprise"
+
+  // Relations
+  users      User[]
+  api_keys   ApiKey[]
+
   // Metadata
-  created_by   String?
-  expires_at   DateTime?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
-  
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("organizations")
+}
+
+model ApiKey {
+  id              String   @id @default(uuid())
+  key_hash        String   @unique
+  name            String
+  description     String?
+
+  // Organization relationship
+  organization_id String?
+  organization    Organization? @relation(fields: [organization_id], references: [id])
+
+  // Permissions
+  is_active       Boolean  @default(true)
+  rate_limit      Int      @default(1000) // requests per minute (increased from 100)
+
+  // Usage tracking
+  last_used_at    DateTime?
+  request_count   Int      @default(0)
+
+  // Metadata
+  created_by      String?
+  expires_at      DateTime?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
   @@index([key_hash])
   @@index([is_active])
+  @@index([organization_id])
   @@map("api_keys")
 }

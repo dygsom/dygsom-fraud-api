@@ -84,7 +84,7 @@ curl http://localhost:3000/health
 open http://localhost:3000/docs
 
 # View Grafana dashboards
-open http://localhost:3001  # Login: admin/admin
+open http://localhost:3002  # Login: admin/admin
 ```
 
 **Run Tests:**

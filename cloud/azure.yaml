@@ -1,0 +1,11 @@
+name: dygsom-fraud-api
+metadata:
+  template: minimal
+services:
+  api:
+    project: ../
+    host: containerapp
+    language: python
+infra:
+  provider: bicep
+  path: ./infra

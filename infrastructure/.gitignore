@@ -1,0 +1,22 @@
+# Deployment outputs
+deployment-output*.json
+deployment-outputs-*.txt
+
+# Parameters with secrets (if you create local versions)
+*.parameters.local.json
+*.secret.json
+
+# Azure CLI cache
+.azure/
+
+# Terraform state (if ever migrating)
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
