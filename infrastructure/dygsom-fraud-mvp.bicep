@@ -167,7 +167,7 @@ resource apiContainerApp 'Microsoft.App/containerApps@2023-05-01' = {
         ]
         corsPolicy: {
           allowedOrigins: [
-            'https://${dashboardContainerApp.properties.configuration.ingress.fqdn}'
+            'https://ca-dashboard-dev.${containerAppsEnv.properties.defaultDomain}'
             'http://localhost:3001'
           ]
           allowedMethods: [
@@ -224,7 +224,7 @@ resource apiContainerApp 'Microsoft.App/containerApps@2023-05-01' = {
             }
             {
               name: 'CORS_ORIGINS'
-              value: 'https://${dashboardContainerApp.properties.configuration.ingress.fqdn},http://localhost:3001'
+              value: 'https://ca-dashboard-dev.${containerAppsEnv.properties.defaultDomain},http://localhost:3001'
             }
           ]
           probes: [
@@ -308,7 +308,7 @@ resource dashboardContainerApp 'Microsoft.App/containerApps@2023-05-01' = {
           env: [
             {
               name: 'NEXT_PUBLIC_API_BASE_URL'
-              value: 'https://${apiContainerApp.properties.configuration.ingress.fqdn}'
+              value: 'https://ca-api-dev.${containerAppsEnv.properties.defaultDomain}'
             }
             {
               name: 'NODE_ENV'
@@ -357,9 +357,9 @@ resource dashboardContainerApp 'Microsoft.App/containerApps@2023-05-01' = {
 // OUTPUTS
 // ================================================================================
 
-output apiUrl string = 'https://${apiContainerApp.properties.configuration.ingress.fqdn}'
-output dashboardUrl string = 'https://${dashboardContainerApp.properties.configuration.ingress.fqdn}'
-output apiSwaggerUrl string = 'https://${apiContainerApp.properties.configuration.ingress.fqdn}/docs'
+output apiUrl string = 'https://ca-api-dev.${containerAppsEnv.properties.defaultDomain}'
+output dashboardUrl string = 'https://ca-dashboard-dev.${containerAppsEnv.properties.defaultDomain}'
+output apiSwaggerUrl string = 'https://ca-api-dev.${containerAppsEnv.properties.defaultDomain}/docs'
 output postgresHost string = postgres.properties.fullyQualifiedDomainName
 output postgresDatabaseName string = postgresDatabaseName
 output redisHost string = enableRedis ? redis.properties.hostName : 'disabled'
