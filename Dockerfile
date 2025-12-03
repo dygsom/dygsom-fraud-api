@@ -14,14 +14,13 @@ FROM base AS production
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
-# Create appuser first
-RUN useradd -m -u 1000 appuser
+# Create appuser and setup directories
+RUN useradd -m -u 1000 appuser && \
+    mkdir -p /home/appuser/.cache/prisma-python && \
+    chown -R appuser:appuser /home/appuser && \
+    chown -R appuser:appuser /app
 
-# Create necessary directories with correct permissions
-RUN mkdir -p /home/appuser/.cache/prisma-python && \
-    chown -R appuser:appuser /home/appuser/.cache
-
-# Switch to appuser before prisma generate
+# Switch to appuser for the rest
 USER appuser
 
 # Set HOME to appuser's home directory
@@ -32,11 +31,6 @@ RUN prisma generate
 
 # Ensure query engine binary has execute permissions
 RUN find /home/appuser/.cache/prisma-python -name "*query-engine*" -type f -exec chmod +x {} \; 2>/dev/null || true
-
-# Change ownership of app directory
-USER root
-RUN chown -R appuser:appuser /app
-USER appuser
 
 EXPOSE 3000
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "3000", "--workers", "4"]
