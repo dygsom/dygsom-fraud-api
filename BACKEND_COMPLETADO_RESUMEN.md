@@ -100,7 +100,7 @@ Se ha implementado exitosamente el backend completo para el dashboard web del DY
 curl -X POST http://localhost:3000/api/v1/auth/signup \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admin@dygsom.com",
+    "email": "admin@dygsom.pe",
     "password": "SecurePass123",
     "name": "Admin User",
     "organization_name": "DYGSOM Inc"
@@ -114,7 +114,7 @@ curl -X POST http://localhost:3000/api/v1/auth/signup \
   "token_type": "bearer",
   "user": {
     "id": "9d26fd13-eb38-48fc-a46a-eb8ecfb2fc5e",
-    "email": "admin@dygsom.com",
+    "email": "admin@dygsom.pe",
     "name": "Admin User",
     "role": "admin",
     "organization": {
@@ -139,7 +139,7 @@ curl http://localhost:3000/api/v1/auth/me \
 ```json
 {
   "id": "9d26fd13-eb38-48fc-a46a-eb8ecfb2fc5e",
-  "email": "admin@dygsom.com",
+  "email": "admin@dygsom.pe",
   "name": "Admin User",
   "role": "admin",
   "organization": {
@@ -155,7 +155,7 @@ curl http://localhost:3000/api/v1/auth/me \
 ## Datos de Test Creados
 
 ### Usuario Admin
-- **Email:** admin@dygsom.com
+- **Email:** admin@dygsom.pe
 - **Password:** SecurePass123
 - **Role:** admin
 - **Organization:** DYGSOM Inc (startup plan)
@@ -179,7 +179,7 @@ dygsom_EqeFcIMw8KMwwLcAJPbLhejBzHh4YBVS
 curl -X POST http://localhost:3000/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admin@dygsom.com",
+    "email": "admin@dygsom.pe",
     "password": "SecurePass123"
   }'
 ```

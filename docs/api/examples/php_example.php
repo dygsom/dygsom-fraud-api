@@ -11,7 +11,7 @@
 
 class DYGSOMFraudClient {
     private $apiKey;
-    private $baseURL = 'https://api.dygsom.com';
+    private $baseURL = 'https://api.dygsom.pe';
     private $timeout = 5;
 
     public function __construct($apiKey = null) {

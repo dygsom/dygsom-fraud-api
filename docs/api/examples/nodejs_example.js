@@ -24,7 +24,7 @@ class DYGSOMFraudClient {
    * @param {string|null} apiKey - API key (defaults to env var)
    * @param {string} baseURL - API base URL
    */
-  constructor(apiKey = null, baseURL = 'https://api.dygsom.com') {
+  constructor(apiKey = null, baseURL = 'https://api.dygsom.pe') {
     this.apiKey = apiKey || process.env.DYGSOM_API_KEY;
     this.baseURL = baseURL;
     this.timeout = 5000; // milliseconds

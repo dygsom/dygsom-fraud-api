@@ -17,7 +17,7 @@ This comprehensive checklist ensures all systems, documentation, and processes a
 - [ ] Redis cache configured and tested
 - [ ] Load balancer configured (if scaled deployment)
 - [ ] SSL certificates installed and valid
-- [ ] DNS configured for api.dygsom.com
+- [ ] DNS configured for api.dygsom.pe
 - [ ] CDN configured (if applicable)
 - [ ] Firewall rules configured
 - [ ] DDoS protection enabled
@@ -152,8 +152,8 @@ This comprehensive checklist ensures all systems, documentation, and processes a
 - [ ] Escalation matrix defined
 - [ ] Backup and recovery tested
 - [ ] Disaster recovery plan documented
-- [ ] Status page configured (status.dygsom.com)
-- [ ] Support email configured (support@dygsom.com)
+- [ ] Status page configured (status.dygsom.pe)
+- [ ] Support email configured (support@dygsom.pe)
 - [ ] Runbook created for operations team
 - [ ] Post-mortem template prepared
 

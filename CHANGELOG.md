@@ -132,9 +132,9 @@ Not applicable - this is the first production release.
 ## Support
 
 For questions about this release:
-- **Technical Support**: support@dygsom.com
-- **Documentation**: https://docs.dygsom.com
-- **Status Page**: https://status.dygsom.com
+- **Technical Support**: support@dygsom.pe
+- **Documentation**: https://docs.dygsom.pe
+- **Status Page**: https://status.dygsom.pe
 
 ---
 

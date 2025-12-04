@@ -8,7 +8,7 @@ Get started with the DYGSOM Fraud Detection API in three simple steps.
 
 ## Prerequisites
 
-- API key (sign up at https://dygsom.com/signup)
+- API key (sign up at https://dygsom.pe/signup)
 - Development environment with internet access
 - cURL, Python, Node.js, or PHP installed
 
@@ -16,7 +16,7 @@ Get started with the DYGSOM Fraud Detection API in three simple steps.
 
 ## Step 1: Get Your API Key (2 minutes)
 
-1. Sign up at [https://dygsom.com/signup](https://dygsom.com/signup)
+1. Sign up at [https://dygsom.pe/signup](https://dygsom.pe/signup)
 2. Verify your email address
 3. Log in to your dashboard
 4. Navigate to **API Keys** section
@@ -36,7 +36,7 @@ export DYGSOM_API_KEY=dygsom_your_api_key_here
 Test your API key with a simple cURL request:
 
 ```bash
-curl -X POST https://api.dygsom.com/api/v1/fraud/score \
+curl -X POST https://api.dygsom.pe/api/v1/fraud/score \
   -H "Content-Type: application/json" \
   -H "X-API-Key: $DYGSOM_API_KEY" \
   -d '{
@@ -85,7 +85,7 @@ import requests
 from datetime import datetime
 
 API_KEY = os.getenv("DYGSOM_API_KEY")
-API_URL = "https://api.dygsom.com/api/v1/fraud/score"
+API_URL = "https://api.dygsom.pe/api/v1/fraud/score"
 
 def check_fraud(transaction):
     response = requests.post(
@@ -125,7 +125,7 @@ else:
 const axios = require('axios');
 
 const API_KEY = process.env.DYGSOM_API_KEY;
-const API_URL = 'https://api.dygsom.com/api/v1/fraud/score';
+const API_URL = 'https://api.dygsom.pe/api/v1/fraud/score';
 
 async function checkFraud(transaction) {
   const response = await axios.post(API_URL, transaction, {
@@ -173,8 +173,8 @@ if (result.recommendation === 'APPROVE') {
 
 ## Need Help?
 
-- **Email:** support@dygsom.com
-- **Documentation:** https://docs.dygsom.com
+- **Email:** support@dygsom.pe
+- **Documentation:** https://docs.dygsom.pe
 - **API Reference:** [docs/api/API_REFERENCE.md](../api/API_REFERENCE.md)
 - **Code Examples:** [docs/api/examples/](../api/examples/)
 

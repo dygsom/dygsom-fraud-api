@@ -23,7 +23,7 @@ This guide walks you through integrating the DYGSOM Fraud Detection API into you
 
 ### 1.1 Create an Account
 
-1. Visit [https://dygsom.com/signup](https://dygsom.com/signup)
+1. Visit [https://dygsom.pe/signup](https://dygsom.pe/signup)
 2. Complete the registration form
 3. Verify your email address
 4. Log in to your dashboard
@@ -65,7 +65,7 @@ Test the API using cURL to verify your credentials and understand the response f
 Verify API availability:
 
 ```bash
-curl -X GET https://api.dygsom.com/health
+curl -X GET https://api.dygsom.pe/health
 ```
 
 **Expected Response:**
@@ -81,7 +81,7 @@ curl -X GET https://api.dygsom.com/health
 Make your first fraud assessment:
 
 ```bash
-curl -X POST https://api.dygsom.com/api/v1/fraud/score \
+curl -X POST https://api.dygsom.pe/api/v1/fraud/score \
   -H "Content-Type: application/json" \
   -H "X-API-Key: dygsom_your_api_key_here" \
   -d '{
@@ -144,7 +144,7 @@ class DYGSOMFraudClient:
 
     def __init__(self, api_key=None):
         self.api_key = api_key or os.getenv("DYGSOM_API_KEY")
-        self.base_url = "https://api.dygsom.com"
+        self.base_url = "https://api.dygsom.pe"
         self.timeout = 5  # seconds
 
         if not self.api_key:
@@ -225,7 +225,7 @@ require('dotenv').config();
 class DYGSOMFraudClient {
   constructor(apiKey = null) {
     this.apiKey = apiKey || process.env.DYGSOM_API_KEY;
-    this.baseURL = 'https://api.dygsom.com';
+    this.baseURL = 'https://api.dygsom.pe';
     this.timeout = 5000; // milliseconds
 
     if (!this.apiKey) {
@@ -299,7 +299,7 @@ main();
 
 class DYGSOMFraudClient {
     private $apiKey;
-    private $baseURL = 'https://api.dygsom.com';
+    private $baseURL = 'https://api.dygsom.pe';
     private $timeout = 5; // seconds
 
     public function __construct($apiKey = null) {
@@ -668,7 +668,7 @@ Final steps before production deployment.
 ### 7.1 Pre-Launch Checklist
 
 - [ ] **API Key**: Production API key generated and stored securely
-- [ ] **Environment**: Production base URL configured (`https://api.dygsom.com`)
+- [ ] **Environment**: Production base URL configured (`https://api.dygsom.pe`)
 - [ ] **HTTPS**: All requests use HTTPS (never HTTP)
 - [ ] **Error Handling**: All error scenarios handled with fallback logic
 - [ ] **Logging**: Comprehensive logging enabled
@@ -711,16 +711,16 @@ Monitor these metrics continuously:
 - Review [Best Practices](../customer/BEST_PRACTICES.md)
 - Set up [Monitoring](../operations/MONITORING_GUIDE.md)
 - Read [Error Codes](ERROR_CODES.md) documentation
-- Join [Community Slack](https://slack.dygsom.com)
-- Contact [Support](mailto:support@dygsom.com) with questions
+- Join [Community Slack](https://slack.dygsom.pe)
+- Contact [Support](mailto:support@dygsom.pe) with questions
 
 ---
 
 **Need Help?**
 
-- Email: support@dygsom.com
-- Documentation: https://docs.dygsom.com
-- Status Page: https://status.dygsom.com
+- Email: support@dygsom.pe
+- Documentation: https://docs.dygsom.pe
+- Status Page: https://status.dygsom.pe
 
 **Last Updated:** 2025-01-25
 **Version:** 1.0.0

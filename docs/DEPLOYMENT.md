@@ -46,7 +46,7 @@ The DYGSOM Fraud API uses a modern CI/CD pipeline built with GitHub Actions, fea
 
 ### Staging
 - **Purpose**: Pre-production testing and QA
-- **Access**: `http://staging.dygsom.com`
+- **Access**: `http://staging.dygsom.pe`
 - **Database**: Staging PostgreSQL (separate from production)
 - **Deployment**: Automated via GitHub Actions
 - **Auto-Deploy**: Yes (on push to `develop` branch)
@@ -55,7 +55,7 @@ The DYGSOM Fraud API uses a modern CI/CD pipeline built with GitHub Actions, fea
 
 ### Production
 - **Purpose**: Live production environment
-- **Access**: `https://api.dygsom.com`
+- **Access**: `https://api.dygsom.pe`
 - **Database**: Production PostgreSQL (high availability)
 - **Deployment**: Manual via GitHub Actions (requires approval)
 - **Auto-Deploy**: No (manual trigger only)
@@ -146,7 +146,7 @@ git pull origin develop
 
 1. **GitHub Actions**: Check the workflow run at https://github.com/your-org/dygsom-fraud-api/actions
 2. **Slack**: Watch for deployment notifications in #deployments channel
-3. **Staging URL**: Verify at http://staging.dygsom.com/health/ready
+3. **Staging URL**: Verify at http://staging.dygsom.pe/health/ready
 4. **Logs**: `docker logs dygsom-api-staging`
 
 ---
@@ -238,7 +238,7 @@ Production deployments are **manual** and require approval.
    - Verify smoke tests pass
 
 6. **Verify Production**
-   - Check: https://api.dygsom.com/health/ready
+   - Check: https://api.dygsom.pe/health/ready
    - Check Grafana dashboards
    - Monitor error rates in Sentry
 
@@ -473,10 +473,10 @@ docker logs dygsom-api-production
 
 ### Dashboards
 
-- **Main Dashboard**: https://monitoring.dygsom.com/d/main
-- **API Performance**: https://monitoring.dygsom.com/d/api
-- **ML Metrics**: https://monitoring.dygsom.com/d/ml
-- **Infrastructure**: https://monitoring.dygsom.com/d/infra
+- **Main Dashboard**: https://monitoring.dygsom.pe/d/main
+- **API Performance**: https://monitoring.dygsom.pe/d/api
+- **ML Metrics**: https://monitoring.dygsom.pe/d/ml
+- **Infrastructure**: https://monitoring.dygsom.pe/d/infra
 
 ---
 
@@ -489,9 +489,9 @@ docker logs dygsom-api-production
 
 ### Team Contacts
 
-- **DevOps Lead**: devops-lead@dygsom.com
-- **Backend Lead**: backend-lead@dygsom.com
-- **ML Engineer**: ml-engineer@dygsom.com
+- **DevOps Lead**: devops-lead@dygsom.pe
+- **Backend Lead**: backend-lead@dygsom.pe
+- **ML Engineer**: ml-engineer@dygsom.pe
 
 ### Escalation
 

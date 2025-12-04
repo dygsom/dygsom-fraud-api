@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "DYGSOM Fraud API",
-    "description": "Collection for DYGSOM Fraud Detection API v1.0.0\n\nAuthentication: API Key in X-API-Key header\nBase URL: https://api.dygsom.com",
+    "description": "Collection for DYGSOM Fraud Detection API v1.0.0\n\nAuthentication: API Key in X-API-Key header\nBase URL: https://api.dygsom.pe",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "1"
   },
@@ -23,7 +23,7 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "https://api.dygsom.com",
+      "value": "https://api.dygsom.pe",
       "type": "string"
     },
     {

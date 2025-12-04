@@ -49,7 +49,7 @@ Database:
 ```
 ┌─────────────────────────────────────────┐
 │         Next.js Dashboard               │
-│  (dashboard.dygsom.com)                 │
+│  (dashboard.dygsom.pe)                 │
 │                                         │
 │  - Login / Signup                       │
 │  - Transactions View                    │
@@ -59,7 +59,7 @@ Database:
               ↓ HTTPS
 ┌─────────────────────────────────────────┐
 │      FastAPI Backend                    │
-│  (api.dygsom.com)                       │
+│  (api.dygsom.pe)                       │
 │                                         │
 │  - POST /auth/login                     │
 │  - GET /dashboard/transactions          │
@@ -875,7 +875,7 @@ npx shadcn-ui@latest add toast
 ```bash
 # API Backend
 NEXT_PUBLIC_API_URL=http://localhost:3000
-# En producción: https://api.dygsom.com
+# En producción: https://api.dygsom.pe
 
 # NextAuth
 NEXTAUTH_SECRET=your-secret-key-here

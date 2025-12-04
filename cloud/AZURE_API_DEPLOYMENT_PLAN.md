@@ -265,7 +265,7 @@ API_KEY_SALT="..."
 NODE_ENV="production"
 LOG_LEVEL="INFO"
 ENABLE_SWAGGER="false"
-CORS_ORIGINS="https://api.dygsom.com"
+CORS_ORIGINS="https://api.dygsom.pe"
 ```
 
 ---

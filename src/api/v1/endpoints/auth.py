@@ -22,7 +22,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # JWT Configuration
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days (extended for MVP stability)
 
 
 # Request/Response Models
@@ -236,7 +236,9 @@ async def signup(
                     "name": organization.name,
                     "plan": organization.plan
                 },
-                "first_api_key": api_key_plain  # Return API key only once
+                "first_api_key": api_key_plain,  # Return API key only once
+                "token_expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # seconds
+                "auth_timestamp": int(datetime.utcnow().timestamp())  # for dashboard sync
             }
         )
 
@@ -317,7 +319,9 @@ async def login(
                     "id": user.organization.id,
                     "name": user.organization.name,
                     "plan": user.organization.plan
-                } if user.organization else None
+                } if user.organization else None,
+                "token_expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,  # seconds
+                "auth_timestamp": int(datetime.utcnow().timestamp())  # for dashboard sync
             }
         )
 
@@ -382,4 +386,27 @@ async def get_current_user_info(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get user information"
+        )
+
+
+@router.get("/verify", response_model=dict)
+async def verify_token(current_user: dict = Depends(get_current_user)):
+    """
+    Verify JWT token validity and return user status
+    
+    This endpoint helps the dashboard verify if the current token is still valid
+    without needing to make additional API calls that might fail.
+    """
+    try:
+        return {
+            "valid": True,
+            "user_id": current_user.get("user_id"),
+            "email": current_user.get("email"),
+            "message": "Token is valid"
+        }
+    except Exception as e:
+        logger.error(f"Token verification error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token"
         )

@@ -671,7 +671,7 @@ curl 'http://localhost:9090/api/v1/query?query=up'
 curl http://localhost:3000/metrics
 
 # View Grafana dashboards
-# Open browser: http://monitoring.dygsom.com
+# Open browser: http://monitoring.dygsom.pe
 ```
 
 ### Networking

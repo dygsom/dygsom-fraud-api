@@ -51,7 +51,7 @@ Transparent pricing that scales with your business.
 
 **Best for:** Large enterprises, high volume
 
-**Contact:** sales@dygsom.com
+**Contact:** sales@dygsom.pe
 
 ---
 
@@ -81,7 +81,7 @@ Transparent pricing that scales with your business.
 - Full Startup features
 - No automatic billing
 
-**Start:** https://dygsom.com/signup
+**Start:** https://dygsom.pe/signup
 
 ---
 
@@ -130,18 +130,18 @@ Transparent pricing that scales with your business.
 
 **Annual discount?** Yes, save 20% on annual billing.
 
-**Non-profit discount?** Yes, contact sales@dygsom.com.
+**Non-profit discount?** Yes, contact sales@dygsom.pe.
 
 ---
 
 ## Get Started
 
-1. Sign up: https://dygsom.com/signup
+1. Sign up: https://dygsom.pe/signup
 2. Choose plan
 3. Get API key instantly
 4. Integrate in 15 minutes
 
-**Need help?** sales@dygsom.com | https://dygsom.com/demo
+**Need help?** sales@dygsom.pe | https://dygsom.pe/demo
 
 ---
 

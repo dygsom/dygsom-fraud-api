@@ -1,7 +1,7 @@
 # API Reference
 
 **Version:** 1.0.0
-**Base URL:** `https://api.dygsom.com`
+**Base URL:** `https://api.dygsom.pe`
 **Last Updated:** 2025-01-25
 
 ## Table of Contents
@@ -30,14 +30,14 @@ All API requests require authentication via an API key passed in the request hea
 
 ```http
 POST /api/v1/fraud/score HTTP/1.1
-Host: api.dygsom.com
+Host: api.dygsom.pe
 Content-Type: application/json
 X-API-Key: dygsom_abc123def456ghi789jkl012mno345pq
 ```
 
 ### Obtaining an API Key
 
-1. Sign up at [https://dygsom.com/signup](https://dygsom.com/signup)
+1. Sign up at [https://dygsom.pe/signup](https://dygsom.pe/signup)
 2. Navigate to Dashboard > API Keys
 3. Generate a new API key
 4. Store the key securely (it will only be shown once)
@@ -123,7 +123,7 @@ Evaluate a transaction for fraud risk and receive a real-time risk assessment.
 #### cURL Example
 
 ```bash
-curl -X POST https://api.dygsom.com/api/v1/fraud/score \
+curl -X POST https://api.dygsom.pe/api/v1/fraud/score \
   -H "Content-Type: application/json" \
   -H "X-API-Key: dygsom_your_api_key_here" \
   -d '{
@@ -161,7 +161,7 @@ Basic health check endpoint to verify API availability.
 #### cURL Example
 
 ```bash
-curl -X GET https://api.dygsom.com/health
+curl -X GET https://api.dygsom.pe/health
 ```
 
 ---
@@ -205,7 +205,7 @@ Comprehensive readiness check that validates all dependencies (database, cache, 
 #### cURL Example
 
 ```bash
-curl -X GET https://api.dygsom.com/health/ready
+curl -X GET https://api.dygsom.pe/health/ready
 ```
 
 ---
@@ -429,10 +429,10 @@ Never send API requests over unencrypted HTTP. Always use `https://` URLs to pro
 
 ```python
 # Correct
-API_URL = "https://api.dygsom.com/api/v1/fraud/score"
+API_URL = "https://api.dygsom.pe/api/v1/fraud/score"
 
 # Incorrect - Never use HTTP
-API_URL = "http://api.dygsom.com/api/v1/fraud/score"
+API_URL = "http://api.dygsom.pe/api/v1/fraud/score"
 ```
 
 ### 2. Store API Keys Securely
@@ -599,10 +599,10 @@ def check_fraud_monitored(transaction):
 
 For technical support or questions about the API:
 
-- **Email:** support@dygsom.com
-- **Documentation:** https://docs.dygsom.com
-- **Status Page:** https://status.dygsom.com
-- **Community Slack:** https://slack.dygsom.com
+- **Email:** support@dygsom.pe
+- **Documentation:** https://docs.dygsom.pe
+- **Status Page:** https://status.dygsom.pe
+- **Community Slack:** https://slack.dygsom.pe
 
 For urgent issues affecting production systems, please include "[URGENT]" in the email subject line.
 

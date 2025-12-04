@@ -8,7 +8,7 @@
 #
 
 API_KEY="${DYGSOM_API_KEY}"
-BASE_URL="https://api.dygsom.com"
+BASE_URL="https://api.dygsom.pe"
 
 if [ -z "$API_KEY" ]; then
     echo "Error: DYGSOM_API_KEY environment variable not set"

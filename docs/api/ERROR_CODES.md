@@ -87,11 +87,11 @@ All error responses follow a consistent JSON structure:
 **Example Fix:**
 ```bash
 # Incorrect - missing quotes
-curl -X POST https://api.dygsom.com/api/v1/fraud/score \
+curl -X POST https://api.dygsom.pe/api/v1/fraud/score \
   -d '{amount: 100}'
 
 # Correct - valid JSON
-curl -X POST https://api.dygsom.com/api/v1/fraud/score \
+curl -X POST https://api.dygsom.pe/api/v1/fraud/score \
   -H "Content-Type: application/json" \
   -d '{"amount": 100}'
 ```
@@ -131,11 +131,11 @@ curl -X POST https://api.dygsom.com/api/v1/fraud/score \
 **Example Fix:**
 ```bash
 # Incorrect - missing API key header
-curl -X POST https://api.dygsom.com/api/v1/fraud/score \
+curl -X POST https://api.dygsom.pe/api/v1/fraud/score \
   -d '{"transaction_id": "tx-001"}'
 
 # Correct - includes API key
-curl -X POST https://api.dygsom.com/api/v1/fraud/score \
+curl -X POST https://api.dygsom.pe/api/v1/fraud/score \
   -H "X-API-Key: dygsom_your_api_key_here" \
   -d '{"transaction_id": "tx-001"}'
 ```
@@ -161,7 +161,7 @@ curl -X POST https://api.dygsom.com/api/v1/fraud/score \
     "message": "API key is inactive or suspended",
     "details": {
       "reason": "account_suspended",
-      "contact": "support@dygsom.com"
+      "contact": "support@dygsom.pe"
     }
   },
   "timestamp": "2025-01-25T10:30:00.123Z"
@@ -169,7 +169,7 @@ curl -X POST https://api.dygsom.com/api/v1/fraud/score \
 ```
 
 **Resolution:**
-- Contact support@dygsom.com
+- Contact support@dygsom.pe
 - Check account status in dashboard
 - Verify payment information
 
@@ -348,7 +348,7 @@ def call_api_with_backoff(transaction, max_retries=3):
     "message": "Service is temporarily unavailable",
     "details": {
       "retry_after": 60,
-      "status_page": "https://status.dygsom.com"
+      "status_page": "https://status.dygsom.pe"
     }
   },
   "timestamp": "2025-01-25T10:30:00.123Z"
@@ -515,9 +515,9 @@ Prevent cascading failures by implementing circuit breaker pattern for persisten
 
 If you encounter errors not documented here or need assistance:
 
-**Email:** support@dygsom.com
-**Status Page:** https://status.dygsom.com
-**Documentation:** https://docs.dygsom.com
+**Email:** support@dygsom.pe
+**Status Page:** https://status.dygsom.pe
+**Documentation:** https://docs.dygsom.pe
 
 When reporting errors, include:
 - Error code and message

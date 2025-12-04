@@ -79,14 +79,14 @@ DYGSOM commits to the following monthly uptime percentages:
 
 ## Monitoring
 
-- **Status Page:** https://status.dygsom.com
+- **Status Page:** https://status.dygsom.pe
 - **Monthly Reports:** Enterprise tier only
 
 ---
 
 ## Contact
 
-- **Support:** support@dygsom.com
+- **Support:** support@dygsom.pe
 - **Emergency:** Include "[URGENT]" in subject (Enterprise)
 
 **Version:** 1.0.0 | **Last Updated:** 2025-01-25

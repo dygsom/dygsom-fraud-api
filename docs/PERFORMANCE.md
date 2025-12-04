@@ -997,4 +997,4 @@ Before deploying to production:
 **Last Updated:** 2025-01-25
 **Next Review:** 2025-02-25
 
-For questions or issues, contact: engineering@dygsom.com
+For questions or issues, contact: engineering@dygsom.pe

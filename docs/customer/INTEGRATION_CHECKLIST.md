@@ -20,7 +20,7 @@ Use this checklist to ensure a complete and secure integration of the DYGSOM Fra
 
 - [ ] API Key Generated and stored securely
 - [ ] API Key stored as environment variable
-- [ ] Base URL configured (`https://api.dygsom.com`)
+- [ ] Base URL configured (`https://api.dygsom.pe`)
 - [ ] Never committed API key to version control
 
 ---
@@ -127,10 +127,10 @@ Use this checklist to ensure a complete and secure integration of the DYGSOM Fra
 
 ## Support Contacts
 
-- **Technical Support:** support@dygsom.com
+- **Technical Support:** support@dygsom.pe
 - **Emergency:** Include "[URGENT]" in subject
-- **Documentation:** https://docs.dygsom.com
-- **Status Page:** https://status.dygsom.com
+- **Documentation:** https://docs.dygsom.pe
+- **Status Page:** https://status.dygsom.pe
 
 ---
 

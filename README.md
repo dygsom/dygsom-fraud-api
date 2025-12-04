@@ -37,7 +37,7 @@ If you want to integrate the DYGSOM Fraud API into your application:
 
 **Example Request:**
 ```bash
-curl -X POST https://api.dygsom.com/api/v1/fraud/score \
+curl -X POST https://api.dygsom.pe/api/v1/fraud/score \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your_api_key_here" \
   -d '{
@@ -260,10 +260,10 @@ See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment guide.
 
 ## Support
 
-- **Technical Support**: support@dygsom.com
-- **Documentation**: https://docs.dygsom.com
-- **Status Page**: https://status.dygsom.com
-- **Community**: https://slack.dygsom.com
+- **Technical Support**: support@dygsom.pe
+- **Documentation**: https://docs.dygsom.pe
+- **Status Page**: https://status.dygsom.pe
+- **Community**: https://slack.dygsom.pe
 
 **For urgent production issues**, include "[URGENT]" in email subject line.
 
@@ -295,7 +295,7 @@ Proprietary - DYGSOM. All rights reserved.
 
 This software is the property of DYGSOM and is protected by copyright law. Unauthorized copying, distribution, or use is strictly prohibited.
 
-For licensing inquiries: sales@dygsom.com
+For licensing inquiries: sales@dygsom.pe
 
 ---
 

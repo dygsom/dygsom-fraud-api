@@ -114,7 +114,7 @@ Examples:
     --description "Partner integration for fraud detection" \\
     --rate-limit 200 \\
     --expires-days 365 \\
-    --created-by "admin@dygsom.com"
+    --created-by "admin@dygsom.pe"
         """
     )
     

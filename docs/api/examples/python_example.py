@@ -47,7 +47,7 @@ class DYGSOMFraudClient:
     with built-in error handling, retries, and logging.
     """
 
-    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://api.dygsom.com"):
+    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://api.dygsom.pe"):
         """
         Initialize the fraud client.
 
