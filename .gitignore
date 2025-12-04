@@ -103,3 +103,7 @@ Claude.md
 # Config local (si existe)
 config/local.py
 config/*.local.*
+
+/deleteme-at-finish
+/cloud
+/.claude
