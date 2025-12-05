@@ -21,7 +21,8 @@ EXCLUDED_PATHS = [
     "/openapi.json",
     "/redoc",
     "/metrics",
-    "/api/v1/auth/"  # Auth endpoints (signup, login, etc.)
+    "/api/v1/auth/",     # Auth endpoints (signup, login, etc.)
+    "/api/v1/dashboard/" # Dashboard endpoints use JWT token, not API Key
 ]
 
 
