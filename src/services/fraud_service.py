@@ -49,20 +49,24 @@ class FraudService:
     def __init__(
         self,
         transaction_repo: TransactionRepository,
-        cache_repo: Optional[CacheRepository] = None
+        cache_repo: Optional[CacheRepository] = None,
+        ml_service: Optional[MLService] = None,
+        feature_engineer: Optional[FeatureEngineer] = None
     ):
         """Initialize FraudService
         
         Args:
             transaction_repo: Transaction repository instance
             cache_repo: Cache repository instance (optional, for performance optimization)
+            ml_service: ML service instance (optional, uses singleton if provided for performance)
+            feature_engineer: Feature engineer instance (optional, uses singleton if provided for performance)
         """
         self.transaction_repo = transaction_repo
         self.cache_repo = cache_repo
         
-        # Initialize ML components (Day 6)
-        self.feature_engineer = FeatureEngineer()
-        self.ml_service = MLService()
+        # Use provided instances or create new ones (singleton pattern for performance)
+        self.feature_engineer = feature_engineer or FeatureEngineer()
+        self.ml_service = ml_service or MLService()
         
         logger.info(
             "FraudService initialized with ML integration",

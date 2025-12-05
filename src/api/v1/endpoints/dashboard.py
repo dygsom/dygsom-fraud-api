@@ -230,9 +230,12 @@ async def get_analytics_summary(
     try:
         date_from = datetime.utcnow() - timedelta(days=days)
 
-        # Get all transactions in time range
+        # Get transactions in time range with organization filtering
         transactions = await prisma.transaction.find_many(
-            where={"timestamp": {"gte": date_from}}
+            where={
+                "organization_id": current_user.get("organization_id"),  # CRITICAL: Organization isolation
+                "timestamp": {"gte": date_from}
+            }
         )
 
         total_transactions = len(transactions)
@@ -317,9 +320,12 @@ async def get_fraud_rate_over_time(
     try:
         date_from = datetime.utcnow() - timedelta(days=days)
 
-        # Get transactions
+        # Get transactions with organization filtering
         transactions = await prisma.transaction.find_many(
-            where={"timestamp": {"gte": date_from}},
+            where={
+                "organization_id": current_user.get("organization_id"),  # CRITICAL: Organization isolation
+                "timestamp": {"gte": date_from}
+            },
             order={"timestamp": "asc"}
         )
 
@@ -402,9 +408,12 @@ async def get_risk_distribution(
     try:
         date_from = datetime.utcnow() - timedelta(days=days)
 
-        # Get transactions
+        # Get transactions with organization filtering
         transactions = await prisma.transaction.find_many(
-            where={"timestamp": {"gte": date_from}}
+            where={
+                "organization_id": current_user.get("organization_id"),  # CRITICAL: Organization isolation
+                "timestamp": {"gte": date_from}
+            }
         )
 
         # Count by risk level

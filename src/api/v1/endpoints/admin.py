@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, validator
 from src.repositories.api_key_repository import ApiKeyRepository
 from src.core.security import SecurityUtils
-from src.dependencies import get_prisma
+from src.dependencies import get_prisma, get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +71,7 @@ class ApiKeyListResponse(BaseModel):
 )
 async def create_api_key(
     request: CreateApiKeyRequest,
+    current_user: dict = Depends(get_current_user),
     prisma=Depends(get_prisma)
 ):
     """Create new API key
@@ -165,6 +166,7 @@ async def create_api_key(
     description="Returns all active API keys (plain text keys never returned)"
 )
 async def list_api_keys(
+    current_user: dict = Depends(get_current_user),
     prisma=Depends(get_prisma)
 ):
     """List all active API keys
@@ -179,7 +181,24 @@ async def list_api_keys(
         HTTPException: If listing fails
     """
     try:
-        logger.info("Listing API keys")
+        # Verify admin role
+        if current_user.get("role") != "admin":
+            logger.warning(
+                "Non-admin user attempted to list API keys",
+                extra={
+                    "user_id": current_user.get("user_id"),
+                    "role": current_user.get("role")
+                }
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin access required to list API keys"
+            )
+        
+        logger.info(
+            "Listing API keys",
+            extra={"admin_user_id": current_user.get("user_id")}
+        )
         
         # Create repository
         api_key_repo = ApiKeyRepository(prisma)
@@ -236,6 +255,7 @@ async def list_api_keys(
 )
 async def deactivate_api_key(
     key_id: str,
+    current_user: dict = Depends(get_current_user),
     prisma=Depends(get_prisma)
 ):
     """Deactivate API key
@@ -251,9 +271,27 @@ async def deactivate_api_key(
         HTTPException: If key not found or deactivation fails
     """
     try:
+        # Verify admin role
+        if current_user.get("role") != "admin":
+            logger.warning(
+                "Non-admin user attempted to deactivate API key",
+                extra={
+                    "user_id": current_user.get("user_id"),
+                    "role": current_user.get("role"),
+                    "key_id": key_id
+                }
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin access required to deactivate API keys"
+            )
+        
         logger.info(
             "Deactivating API key",
-            extra={"key_id": key_id}
+            extra={
+                "key_id": key_id,
+                "admin_user_id": current_user.get("user_id")
+            }
         )
         
         # Create repository

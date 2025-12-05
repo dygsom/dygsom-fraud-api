@@ -461,24 +461,6 @@ def track_rate_limit(api_key_name: str, remaining: int) -> None:
         logger.error(f"Error tracking rate limit metrics: {e}")
 
 
-def set_model_info(model_version: str, model_type: str) -> None:
-    """
-    Set ML model information.
-
-    Args:
-        model_version: Model version
-        model_type: Model type (xgboost, etc.)
-    """
-    try:
-        MODEL_INFO.labels(model_version=model_version, model_type=model_type).set(1)
-
-        logger.info(
-            "Model info set",
-            extra={"model_version": model_version, "model_type": model_type},
-        )
-    except Exception as e:
-        logger.error(f"Error setting model info: {e}")
-
 
 def update_fraud_rate(fraud_rate: float) -> None:
     """

@@ -4,6 +4,7 @@ Provides instances of services and repositories with proper initialization.
 """
 
 import os
+import logging
 from redis import Redis
 from prisma import Prisma
 from fastapi import HTTPException, Header, status
@@ -13,12 +14,17 @@ from typing import Optional
 from src.services.fraud_service import FraudService
 from src.repositories.transaction_repository import TransactionRepository
 from src.repositories.cache_repository import CacheRepository
+from src.ml.ml_service import MLService
+from src.ml.features.feature_engineering import FeatureEngineer
 from src.core.cache import CacheService
 from src.core.config import settings
-from src.ml.ml_service import MLService
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Singleton instances for ML components (critical performance fix)
+_ml_service_instance: Optional[MLService] = None
+_feature_engineer_instance: Optional[FeatureEngineer] = None
 
 # Global Prisma client instance
 # In production, this should be managed with proper lifecycle
@@ -109,6 +115,26 @@ def get_cache_service() -> CacheService:
     return cache_service
 
 
+def get_ml_service() -> MLService:
+    """Get singleton instance of MLService (critical performance optimization)"""
+    global _ml_service_instance
+    if _ml_service_instance is None:
+        logger.info("Initializing ML Service singleton instance")
+        _ml_service_instance = MLService()
+        logger.info("ML Service singleton initialized successfully")
+    return _ml_service_instance
+
+
+def get_feature_engineer() -> FeatureEngineer:
+    """Get singleton instance of FeatureEngineer (critical performance optimization)"""
+    global _feature_engineer_instance
+    if _feature_engineer_instance is None:
+        logger.info("Initializing Feature Engineer singleton instance")
+        _feature_engineer_instance = FeatureEngineer()
+        logger.info("Feature Engineer singleton initialized successfully")
+    return _feature_engineer_instance
+
+
 async def get_fraud_service() -> FraudService:
     """Get FraudService instance with dependencies
 
@@ -134,10 +160,16 @@ async def get_fraud_service() -> FraudService:
         cache_service = get_cache_service()
         cache_repository = CacheRepository(cache_service)
 
-        # Initialize FraudService with cache support
+        # Get singleton instances for ML components (critical performance fix)
+        ml_service = get_ml_service()
+        feature_engineer = get_feature_engineer()
+        
+        # Initialize FraudService with cache support and singleton ML components
         fraud_service = FraudService(
             transaction_repo=transaction_repository,
-            cache_repo=cache_repository
+            cache_repo=cache_repository,
+            ml_service=ml_service,
+            feature_engineer=feature_engineer
         )
 
         logger.debug("FraudService dependencies initialized successfully")

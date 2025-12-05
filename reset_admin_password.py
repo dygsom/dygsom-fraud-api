@@ -12,11 +12,11 @@ async def reset_admin_password():
 
     # Find admin user
     user = await db.user.find_unique(
-        where={"email": "admin@dygsom.pe"}
+        where={"email": "admin@dygsom.com"}
     )
 
     if not user:
-        print("❌ User admin@dygsom.pe not found")
+        print("❌ User admin@dygsom.com not found")
         await db.disconnect()
         return
 

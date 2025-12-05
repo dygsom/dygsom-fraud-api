@@ -55,7 +55,12 @@ class SecurityUtils:
         if not api_key:
             raise ValueError("API key cannot be empty")
         
-        key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+        # Import here to avoid circular imports
+        from src.core.config import settings
+        
+        # Add salt for security (protects against rainbow table attacks)
+        salted_key = api_key + settings.API_KEY_SALT
+        key_hash = hashlib.sha256(salted_key.encode()).hexdigest()
         
         logger.debug(
             "API key hashed",

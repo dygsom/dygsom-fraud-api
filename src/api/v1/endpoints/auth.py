@@ -22,7 +22,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # JWT Configuration
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days (extended for MVP stability)
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 2  # 2 hours (security fix: reduced from 7 days)
 
 
 # Request/Response Models

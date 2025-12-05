@@ -89,8 +89,8 @@ class Settings(BaseSettings):
     # Security
     API_KEY_PREFIX: str = "dygsom_"
     API_KEY_LENGTH: int = 32
-    API_KEY_SALT: str = Field(default="change-in-production", env="API_KEY_SALT")
-    JWT_SECRET: str = Field(default="change-in-production", env="JWT_SECRET")
+    API_KEY_SALT: str = Field(env="API_KEY_SALT", description="Salt for API key hashing - REQUIRED env variable")
+    JWT_SECRET: str = Field(env="JWT_SECRET", description="JWT secret key - REQUIRED env variable")
 
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 100
