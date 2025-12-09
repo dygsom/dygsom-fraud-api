@@ -45,7 +45,7 @@ class AnalyticsSummary(BaseModel):
     """Analytics summary model"""
     total_transactions: int
     fraud_detected: int
-    fraud_rate: float
+    fraud_percentage: float  # ← Cambiar nombre para coincidir con frontend
     total_amount_analyzed: float
     avg_fraud_score: float
 
@@ -268,7 +268,7 @@ async def get_analytics_summary(
         return AnalyticsSummary(
             total_transactions=total_transactions,
             fraud_detected=fraud_detected,
-            fraud_rate=round(fraud_rate, 2),
+            fraud_percentage=round(fraud_rate / 100, 4),  # ← Enviar como decimal (0-1) para formatPercentage
             total_amount_analyzed=round(total_amount, 2),
             avg_fraud_score=round(avg_fraud_score, 3)
         )
