@@ -285,8 +285,8 @@ async def get_analytics_summary(
             if tx.risk_level in ["HIGH", "CRITICAL"]
         )
 
-        # Calculate fraud rate
-        fraud_rate = (fraud_detected / total_transactions * 100) if total_transactions > 0 else 0
+        # Calculate fraud rate as decimal (0-1) for consistency with Dashboard
+        fraud_rate_decimal = (fraud_detected / total_transactions) if total_transactions > 0 else 0
 
         # Sum amounts
         total_amount = sum(float(tx.amount) for tx in transactions)
@@ -381,7 +381,7 @@ async def get_analytics_summary(
         return AnalyticsSummary(
             total_transactions=total_transactions,
             fraud_detected=fraud_detected,
-            fraud_percentage=round(fraud_rate / 100, 4),  # ← Enviar como decimal (0-1) para formatPercentage
+            fraud_percentage=round(fraud_rate_decimal, 4),  # ← Enviar como decimal (0-1) para formatPercentage
             total_amount=round(total_amount, 2),
             avg_risk_score=round(avg_risk_score, 3),  # ← Renamed from avg_fraud_score
             risk_distribution=risk_distribution,
@@ -466,13 +466,13 @@ async def get_fraud_rate_over_time(
         results = []
         for date_key in sorted(daily_stats.keys()):
             stats = daily_stats[date_key]
-            fraud_rate = (stats["fraud_count"] / stats["total"] * 100) if stats["total"] > 0 else 0
+            fraud_rate = (stats["fraud_count"] / stats["total"]) if stats["total"] > 0 else 0
 
             results.append({
                 "date": stats["date"],
                 "total": stats["total"],
                 "fraud_count": stats["fraud_count"],
-                "fraud_rate": round(fraud_rate, 2)
+                "fraud_rate": round(fraud_rate, 4)  # Decimal format (0-1) for consistency
             })
 
         return results
