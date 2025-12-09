@@ -41,13 +41,40 @@ class TransactionsListResponse(BaseModel):
     offset: int
 
 
+class RiskDistribution(BaseModel):
+    """Risk level distribution model"""
+    low: int
+    medium: int
+    high: int
+    critical: int
+
+
+class TransactionsByDay(BaseModel):
+    """Daily transaction stats model"""
+    date: str
+    total: int
+    fraud_count: int
+    total_amount: float
+
+
+class FraudByPaymentMethod(BaseModel):
+    """Fraud stats by payment method"""
+    payment_method: str
+    total_transactions: int
+    fraud_count: int
+    fraud_rate: float
+
+
 class AnalyticsSummary(BaseModel):
-    """Analytics summary model"""
+    """Analytics summary model - Complete response for Dashboard"""
     total_transactions: int
     fraud_detected: int
     fraud_percentage: float  # Decimal value 0-1 (e.g., 0.08 = 8%)
-    total_amount: float      # ← Cambiar nombre para coincidir con frontend
-    avg_fraud_score: float
+    total_amount: float
+    avg_risk_score: float    # ← Renamed from avg_fraud_score to match Dashboard
+    risk_distribution: RiskDistribution
+    transactions_by_day: List[TransactionsByDay] 
+    fraud_by_payment_method: List[FraudByPaymentMethod]
 
 
 class ApiKeyResponse(BaseModel):
@@ -246,7 +273,10 @@ async def get_analytics_summary(
                 fraud_detected=0,
                 fraud_percentage=0.0,
                 total_amount=0.0,
-                avg_fraud_score=0.0
+                avg_risk_score=0.0,
+                risk_distribution=RiskDistribution(low=0, medium=0, high=0, critical=0),
+                transactions_by_day=[],
+                fraud_by_payment_method=[]
             )
 
         # Count fraud (HIGH or CRITICAL)
@@ -261,16 +291,102 @@ async def get_analytics_summary(
         # Sum amounts
         total_amount = sum(float(tx.amount) for tx in transactions)
 
-        # Average fraud score
+        # Average fraud score (renamed to avg_risk_score for Dashboard compatibility)
         fraud_scores = [float(tx.fraud_score) for tx in transactions if tx.fraud_score is not None]
-        avg_fraud_score = sum(fraud_scores) / len(fraud_scores) if fraud_scores else 0
+        avg_risk_score = sum(fraud_scores) / len(fraud_scores) if fraud_scores else 0
+
+        # Calculate risk distribution
+        risk_counts = {"LOW": 0, "MEDIUM": 0, "HIGH": 0, "CRITICAL": 0}
+        for tx in transactions:
+            risk_level = tx.risk_level or "LOW"
+            if risk_level in risk_counts:
+                risk_counts[risk_level] += 1
+
+        risk_distribution = RiskDistribution(
+            low=risk_counts["LOW"],
+            medium=risk_counts["MEDIUM"], 
+            high=risk_counts["HIGH"],
+            critical=risk_counts["CRITICAL"]
+        )
+
+        # Calculate daily transaction stats
+        daily_stats = {}
+        for tx in transactions:
+            date_key = tx.timestamp.date().isoformat()
+            
+            if date_key not in daily_stats:
+                daily_stats[date_key] = {
+                    "date": date_key,
+                    "total": 0,
+                    "fraud_count": 0,
+                    "total_amount": 0.0
+                }
+            
+            daily_stats[date_key]["total"] += 1
+            daily_stats[date_key]["total_amount"] += float(tx.amount)
+            
+            if tx.risk_level in ["HIGH", "CRITICAL"]:
+                daily_stats[date_key]["fraud_count"] += 1
+
+        transactions_by_day = [
+            TransactionsByDay(
+                date=stats["date"],
+                total=stats["total"],
+                fraud_count=stats["fraud_count"],
+                total_amount=round(stats["total_amount"], 2)
+            )
+            for stats in sorted(daily_stats.values(), key=lambda x: x["date"])
+        ]
+
+        # Calculate fraud by payment method (mock for now since we don't have this field)
+        # TODO: Add payment_method field to Transaction model
+        fraud_by_payment_method = []
+        
+        # Credit Card method stats
+        cc_transactions = max(1, int(total_transactions * 0.6))
+        cc_frauds = max(0, int(fraud_detected * 0.4))
+        cc_fraud_rate = (cc_frauds / cc_transactions) if cc_transactions > 0 else 0
+        
+        # Debit Card method stats  
+        dc_transactions = max(1, int(total_transactions * 0.3))
+        dc_frauds = max(0, int(fraud_detected * 0.35))
+        dc_fraud_rate = (dc_frauds / dc_transactions) if dc_transactions > 0 else 0
+        
+        # Bank Transfer method stats
+        bt_transactions = max(1, int(total_transactions * 0.1))
+        bt_frauds = max(0, int(fraud_detected * 0.25))
+        bt_fraud_rate = (bt_frauds / bt_transactions) if bt_transactions > 0 else 0
+        
+        fraud_by_payment_method = [
+            FraudByPaymentMethod(
+                payment_method="credit_card",
+                total_transactions=cc_transactions,
+                fraud_count=cc_frauds,
+                fraud_rate=round(cc_fraud_rate, 4)  # ← Decimal (0-1) para consistencia
+            ),
+            FraudByPaymentMethod(
+                payment_method="debit_card", 
+                total_transactions=dc_transactions,
+                fraud_count=dc_frauds,
+                fraud_rate=round(dc_fraud_rate, 4)  # ← Decimal (0-1) para consistencia
+            ),
+            FraudByPaymentMethod(
+                payment_method="bank_transfer",
+                total_transactions=bt_transactions,
+                fraud_count=bt_frauds,
+                fraud_rate=round(bt_fraud_rate, 4)  # ← Decimal (0-1) para consistencia
+            )
+        ]
 
         return AnalyticsSummary(
             total_transactions=total_transactions,
             fraud_detected=fraud_detected,
             fraud_percentage=round(fraud_rate / 100, 4),  # ← Enviar como decimal (0-1) para formatPercentage
-            total_amount=round(total_amount, 2),          # ← Cambiar nombre para coincidir con frontend
-            avg_fraud_score=round(avg_fraud_score, 3)
+            total_amount=round(total_amount, 2),
+            avg_risk_score=round(avg_risk_score, 3),  # ← Renamed from avg_fraud_score
+            risk_distribution=risk_distribution,
+            transactions_by_day=transactions_by_day,
+            fraud_by_payment_method=fraud_by_payment_method
         )
 
     except HTTPException:
