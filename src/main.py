@@ -58,29 +58,39 @@ async def startup_event():
     """
     logger.info("Application starting up")
 
-    # Initialize ML model info metric (Day 7)
+    # Initialize ML model info metric (Day 7) - Make this optional to prevent startup delays
     try:
+        # Check if required ML config exists before attempting to load
+        if not hasattr(settings, 'ML_MODEL_PATH') or not hasattr(settings, 'ML_MODEL_VERSION'):
+            logger.warning("ML model configuration not found, skipping ML initialization")
+            return
+
         from src.ml.model_manager import ModelManager
 
-        # Instantiate and load model
+        # Instantiate and load model with timeout protection
         manager = ModelManager()
-        manager.load_model()
+        model_loaded = manager.load_model()
+        
+        if model_loaded:
+            # Get model info
+            model_info = manager.get_model_info()
+            model_version = settings.ML_MODEL_VERSION
+            model_type = "xgboost"
 
-        # Get model info
-        model_info = manager.get_model_info()
-        model_version = settings.ML_MODEL_VERSION
-        model_type = "xgboost"
+            set_model_info(model_version, model_type)
 
-        set_model_info(model_version, model_type)
-
-        logger.info(
-            "ML model info initialized",
-            extra={
-                "model_version": model_version,
-                "model_type": model_type,
-                "model_loaded": model_info.get('model_loaded', False)
-            }
-        )
+            logger.info(
+                "ML model info initialized",
+                extra={
+                    "model_version": model_version,
+                    "model_type": model_type,
+                    "model_loaded": model_info.get('model_loaded', False)
+                }
+            )
+        else:
+            logger.warning("ML model could not be loaded, continuing without ML metrics")
+    except ImportError as e:
+        logger.warning(f"ML dependencies not available: {e}")
     except Exception as e:
         logger.warning(f"Could not initialize ML model info: {e}", exc_info=True)
 

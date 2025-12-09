@@ -244,8 +244,8 @@ async def get_analytics_summary(
             return AnalyticsSummary(
                 total_transactions=0,
                 fraud_detected=0,
-                fraud_rate=0.0,
-                total_amount_analyzed=0.0,
+                fraud_percentage=0.0,
+                total_amount=0.0,
                 avg_fraud_score=0.0
             )
 
